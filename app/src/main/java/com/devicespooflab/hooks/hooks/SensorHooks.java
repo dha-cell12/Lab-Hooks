@@ -1,43 +1,46 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class SensorHooks {
 
     private static final String TAG = "DeviceSpoofLab-Sensor";
     private static final String[] DENY = {"goldfish", "ranchu", "emulator", "qemu", "vbox"};
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
-            XposedHelpers.findAndHookMethod(SensorManager.class, "getSensorList",
+            LSPlantJavaWrapper.findAndHookMethod(SensorManager.class, "getSensorList",
                     int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         @SuppressWarnings("unchecked")
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             List<Sensor> orig = (List<Sensor>) param.getResult();
                             param.setResult(filter(orig));
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook getSensorList: " + t);
+            android.util.Log.i(TAG, "failed to hook getSensorList: " + t);
         }
 
         try {
-            XposedHelpers.findAndHookMethod(SensorManager.class, "getDefaultSensor",
+            LSPlantJavaWrapper.findAndHookMethod(SensorManager.class, "getDefaultSensor",
                     int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Sensor s = (Sensor) param.getResult();
                             if (s != null && isEmulatorSensor(s)) {
                                 param.setResult(null);
@@ -45,15 +48,15 @@ public class SensorHooks {
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook getDefaultSensor: " + t);
+            android.util.Log.i(TAG, "failed to hook getDefaultSensor: " + t);
         }
 
         try {
-            XposedHelpers.findAndHookMethod(SensorManager.class, "getDefaultSensor",
+            LSPlantJavaWrapper.findAndHookMethod(SensorManager.class, "getDefaultSensor",
                     int.class, boolean.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Sensor s = (Sensor) param.getResult();
                             if (s != null && isEmulatorSensor(s)) {
                                 param.setResult(null);
@@ -85,4 +88,7 @@ public class SensorHooks {
     private static String nullSafe(String s) {
         return s == null ? "" : s;
     }
+
+
+
 }

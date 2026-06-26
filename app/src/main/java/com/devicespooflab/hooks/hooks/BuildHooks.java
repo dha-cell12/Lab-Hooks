@@ -1,41 +1,45 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import com.devicespooflab.hooks.utils.ConfigManager;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class BuildHooks {
 
     private static final String TAG = "DeviceSpoofLab-Build";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
-            Class<?> buildClass = findBuildClass(lpparam.classLoader);
+            Class<?> buildClass = findBuildClass(classLoader);
             if (buildClass == null) {
-                XposedBridge.log(TAG + ": Build class not found");
+                android.util.Log.i(TAG, "Build class not found");
                 return;
-            }
+
+}
 
             spoofBuildFields(buildClass);
             hookGetSerial(buildClass);
             hookGetRadioVersion(buildClass);
             hookBuildGetString(buildClass);
             hookBuildGetLong(buildClass);
-            hookPartitionMethods(lpparam.classLoader);
-            spoofVersionFields(lpparam.classLoader);
+            hookPartitionMethods(classLoader);
+            spoofVersionFields(classLoader);
 
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                XposedBridge.log(TAG + ": Successfully spoofed Build static fields and methods");
+                android.util.Log.i(TAG, "Successfully spoofed Build static fields and methods");
             }
 
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook Build methods: " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Build methods: " + e.getMessage());
         }
     }
 
@@ -43,7 +47,7 @@ public class BuildHooks {
         try {
             Class<?> buildClass = findBuildClass(classLoader);
             if (buildClass == null) {
-                XposedBridge.log(TAG + ": Build class not found during refresh");
+                android.util.Log.i(TAG, "Build class not found during refresh");
                 return;
             }
 
@@ -51,17 +55,17 @@ public class BuildHooks {
             spoofVersionFields(classLoader);
 
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                XposedBridge.log(TAG + ": Refreshed Build static fields");
+                android.util.Log.i(TAG, "Refreshed Build static fields");
             }
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to refresh Build static fields: " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to refresh Build static fields: " + t.getMessage());
         }
     }
 
     private static Class<?> findBuildClass(ClassLoader classLoader) {
-        Class<?> buildClass = XposedHelpers.findClassIfExists("android.os.Build", classLoader);
+        Class<?> buildClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build", classLoader);
         if (buildClass == null) {
-            buildClass = XposedHelpers.findClassIfExists("android.os.Build", ClassLoader.getSystemClassLoader());
+            buildClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build", ClassLoader.getSystemClassLoader());
         }
         return buildClass;
     }
@@ -107,9 +111,9 @@ public class BuildHooks {
     }
 
     private static void spoofVersionFields(ClassLoader classLoader) {
-        Class<?> versionClass = XposedHelpers.findClassIfExists("android.os.Build$VERSION", classLoader);
+        Class<?> versionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$VERSION", classLoader);
         if (versionClass == null) {
-            versionClass = XposedHelpers.findClassIfExists("android.os.Build$VERSION", ClassLoader.getSystemClassLoader());
+            versionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$VERSION", ClassLoader.getSystemClassLoader());
         }
         if (versionClass == null) {
             return;
@@ -147,10 +151,10 @@ public class BuildHooks {
 
     private static void hookGetSerial(Class<?> buildClass) {
         try {
-            XposedHelpers.findAndHookMethod(buildClass, "getSerial",
-                new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(buildClass, "getSerial",
+                new ZygiskMethodHook() {
                     @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                         String v = ConfigManager.getSerial();
                         if (v != null) param.setResult(v);
                     }
@@ -158,32 +162,32 @@ public class BuildHooks {
         } catch (NoSuchMethodError e) {
             // Method doesn't exist on Android < 8
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook getSerial(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getSerial(): " + e.getMessage());
         }
     }
 
     private static void hookGetRadioVersion(Class<?> buildClass) {
         try {
-            XposedHelpers.findAndHookMethod(buildClass, "getRadioVersion",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(buildClass, "getRadioVersion",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             param.setResult(getRadioVersion());
                         }
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook getRadioVersion(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getRadioVersion(): " + e.getMessage());
         }
     }
 
     private static void hookBuildGetString(Class<?> buildClass) {
         try {
-            XposedHelpers.findAndHookMethod(buildClass, "getString",
+            LSPlantJavaWrapper.findAndHookMethod(buildClass, "getString",
                     String.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             String key = (String) param.args[0];
                             String spoofedValue = ConfigManager.getSystemProperty(key, null);
                             if (spoofedValue != null) {
@@ -193,17 +197,17 @@ public class BuildHooks {
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook Build.getString(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Build.getString(): " + e.getMessage());
         }
     }
 
     private static void hookBuildGetLong(Class<?> buildClass) {
         try {
-            XposedHelpers.findAndHookMethod(buildClass, "getLong",
+            LSPlantJavaWrapper.findAndHookMethod(buildClass, "getLong",
                     String.class, long.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             String key = (String) param.args[0];
                             String spoofedValue = ConfigManager.getSystemProperty(key, null);
                             if (spoofedValue == null) {
@@ -218,24 +222,24 @@ public class BuildHooks {
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook Build.getLong(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Build.getLong(): " + e.getMessage());
         }
     }
 
     private static void hookPartitionMethods(ClassLoader classLoader) {
-        Class<?> partitionClass = XposedHelpers.findClassIfExists("android.os.Build$Partition", classLoader);
+        Class<?> partitionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$Partition", classLoader);
         if (partitionClass == null) {
-            partitionClass = XposedHelpers.findClassIfExists("android.os.Build$Partition", ClassLoader.getSystemClassLoader());
+            partitionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$Partition", ClassLoader.getSystemClassLoader());
         }
         if (partitionClass == null) {
             return;
         }
 
         try {
-            XposedHelpers.findAndHookMethod(partitionClass, "getFingerprint",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(partitionClass, "getFingerprint",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        public void afterHookedMethod(MethodHookParam param) throws Throwable {
                             String partitionName = getPartitionName(param.thisObject);
                             String spoofedValue = getPartitionFingerprint(partitionName);
                             if (spoofedValue != null) {
@@ -245,26 +249,26 @@ public class BuildHooks {
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook Partition.getFingerprint(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Partition.getFingerprint(): " + e.getMessage());
         }
 
         try {
-            XposedHelpers.findAndHookMethod(partitionClass, "getBuildTimeMillis",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(partitionClass, "getBuildTimeMillis",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        public void afterHookedMethod(MethodHookParam param) throws Throwable {
                             param.setResult(getBuildTimeMillis());
                         }
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook Partition.getBuildTimeMillis(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Partition.getBuildTimeMillis(): " + e.getMessage());
         }
     }
 
     private static String getPartitionName(Object partition) {
         try {
-            Object name = XposedHelpers.callMethod(partition, "getName");
+            Object name = LSPlantJavaWrapper.callMethod(partition, "getName");
             return name instanceof String ? (String) name : null;
         } catch (Throwable ignored) {
             return null;
@@ -286,10 +290,10 @@ public class BuildHooks {
         }
 
         try {
-            XposedHelpers.setStaticObjectField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticObjectField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
@@ -299,37 +303,37 @@ public class BuildHooks {
         }
 
         try {
-            XposedHelpers.setStaticObjectField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticObjectField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
     private static void setIntField(Class<?> clazz, String fieldName, int value) {
         try {
-            XposedHelpers.setStaticIntField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticIntField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
     private static void setBooleanField(Class<?> clazz, String fieldName, boolean value) {
         try {
-            XposedHelpers.setStaticBooleanField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticBooleanField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
     private static void setLongField(Class<?> clazz, String fieldName, long value) {
         try {
-            XposedHelpers.setStaticLongField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticLongField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
@@ -339,10 +343,10 @@ public class BuildHooks {
         }
 
         try {
-            XposedHelpers.setStaticObjectField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticObjectField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
@@ -416,4 +420,6 @@ public class BuildHooks {
         }
         return values;
     }
+
+
 }

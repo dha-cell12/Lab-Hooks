@@ -1,26 +1,18 @@
 package com.devicespooflab.hooks.hooks;
 
 import android.os.BatteryManager;
-
 import com.devicespooflab.hooks.utils.ConfigManager;
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
-
-// Live charge level is passthrough; only the design counters are overridden.
 public class BatteryHooks {
-
-    private static final String TAG = "DeviceSpoofLab-Battery";
-
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
-            XposedHelpers.findAndHookMethod(BatteryManager.class, "getIntProperty",
+            LSPlantJavaWrapper.findAndHookMethod(BatteryManager.class, "getIntProperty",
                     int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             int id = (int) param.args[0];
                             if (id == BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER) {
                                 long capUah = ConfigManager.getBatteryChargeCounterUah();
@@ -28,14 +20,14 @@ public class BatteryHooks {
                             }
                         }
                     });
-        } catch (Throwable t) { logFail("getIntProperty", t); }
+        } catch (Throwable t) {}
 
         try {
-            XposedHelpers.findAndHookMethod(BatteryManager.class, "getLongProperty",
+            LSPlantJavaWrapper.findAndHookMethod(BatteryManager.class, "getLongProperty",
                     int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             int id = (int) param.args[0];
                             if (id == BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER) {
                                 param.setResult(ConfigManager.getBatteryChargeCounterUah());
@@ -44,10 +36,9 @@ public class BatteryHooks {
                             }
                         }
                     });
-        } catch (Throwable t) { logFail("getLongProperty", t); }
+        } catch (Throwable t) {}
     }
 
-    private static void logFail(String what, Throwable t) {
-        XposedBridge.log(TAG + ": failed to hook BatteryManager." + what + ": " + t);
-    }
+
+
 }

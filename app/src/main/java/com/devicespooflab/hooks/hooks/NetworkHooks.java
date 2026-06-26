@@ -1,5 +1,8 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import com.devicespooflab.hooks.utils.ConfigManager;
 
 import java.lang.reflect.Method;
@@ -9,33 +12,33 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class NetworkHooks {
 
     private static final String TAG = "DeviceSpoofLab-Network";
     private static final byte[] EMPTY_MAC = new byte[0];
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        hookWifiInfo(lpparam);
-        hookWifiManager(lpparam);
-        hookBluetoothAdapter(lpparam);
+    public static void hook(ClassLoader classLoader, String processName) {
+        hookWifiInfo(classLoader, processName);
+        hookWifiManager(classLoader, processName);
+        hookBluetoothAdapter(classLoader, processName);
         hookNetworkInterface();
     }
 
-    private static void hookWifiInfo(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> wifiInfo = XposedHelpers.findClassIfExists(
-                "android.net.wifi.WifiInfo", lpparam.classLoader);
+    private static void hookWifiInfo(ClassLoader classLoader, String processName) {
+        Class<?> wifiInfo = com.devicespooflab.hooks.ZygiskEntry.findClass(
+                "android.net.wifi.WifiInfo", classLoader);
         if (wifiInfo == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(wifiInfo, "getMacAddress",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(wifiInfo, "getMacAddress",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getWifiMacAddress();
                             if (v != null) param.setResult(v);
                         }
@@ -43,10 +46,10 @@ public class NetworkHooks {
         } catch (Throwable t) { logFail("WifiInfo.getMacAddress", t); }
 
         try {
-            XposedHelpers.findAndHookMethod(wifiInfo, "getBSSID",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(wifiInfo, "getBSSID",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getWifiBssid();
                             if (v != null) param.setResult(v);
                         }
@@ -54,26 +57,26 @@ public class NetworkHooks {
         } catch (Throwable t) { logFail("WifiInfo.getBSSID", t); }
 
         try {
-            XposedHelpers.findAndHookMethod(wifiInfo, "getSSID",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(wifiInfo, "getSSID",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult("\"" + ConfigManager.getWifiSsid() + "\"");
                         }
                     });
         } catch (Throwable t) { logFail("WifiInfo.getSSID", t); }
     }
 
-    private static void hookWifiManager(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> wm = XposedHelpers.findClassIfExists(
-                "android.net.wifi.WifiManager", lpparam.classLoader);
+    private static void hookWifiManager(ClassLoader classLoader, String processName) {
+        Class<?> wm = com.devicespooflab.hooks.ZygiskEntry.findClass(
+                "android.net.wifi.WifiManager", classLoader);
         if (wm == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(wm, "getScanResults",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(wm, "getScanResults",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             // Scan-result MAC addresses are equally fingerprintable;
                             // empty list is the safest spoof.
                             param.setResult(Collections.emptyList());
@@ -85,16 +88,16 @@ public class NetworkHooks {
         // through WifiInfo, already covered.
     }
 
-    private static void hookBluetoothAdapter(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> ba = XposedHelpers.findClassIfExists(
-                "android.bluetooth.BluetoothAdapter", lpparam.classLoader);
+    private static void hookBluetoothAdapter(ClassLoader classLoader, String processName) {
+        Class<?> ba = com.devicespooflab.hooks.ZygiskEntry.findClass(
+                "android.bluetooth.BluetoothAdapter", classLoader);
         if (ba == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(ba, "getAddress",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(ba, "getAddress",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String mac = ConfigManager.getBluetoothMacAddress();
                             if (mac != null) param.setResult(mac.toUpperCase());
                         }
@@ -102,10 +105,10 @@ public class NetworkHooks {
         } catch (Throwable t) { logFail("BluetoothAdapter.getAddress", t); }
 
         try {
-            XposedHelpers.findAndHookMethod(ba, "getName",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(ba, "getName",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getBluetoothName());
                         }
                     });
@@ -117,10 +120,10 @@ public class NetworkHooks {
 
     private static void hookNetworkInterface() {
         try {
-            XposedHelpers.findAndHookMethod(NetworkInterface.class, "getHardwareAddress",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(NetworkInterface.class, "getHardwareAddress",
+                    new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             NetworkInterface ni = (NetworkInterface) param.thisObject;
                             String name = (ni == null) ? null : ni.getName();
                             if (name == null) return;
@@ -145,11 +148,11 @@ public class NetworkHooks {
         } catch (Throwable t) { logFail("NetworkInterface.getHardwareAddress", t); }
 
         try {
-            XposedHelpers.findAndHookMethod(NetworkInterface.class, "getNetworkInterfaces",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(NetworkInterface.class, "getNetworkInterfaces",
+                    new ZygiskMethodHook() {
                         @Override
                         @SuppressWarnings("unchecked")
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Enumeration<NetworkInterface> orig =
                                     (Enumeration<NetworkInterface>) param.getResult();
                             if (orig == null) return;
@@ -189,6 +192,9 @@ public class NetworkHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        XposedBridge.log(TAG + ": failed to hook " + what + ": " + t);
+        android.util.Log.i(TAG, "failed to hook " + what + ": " + t);
     }
+
+
+
 }

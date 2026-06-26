@@ -6,17 +6,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 find_package(lsplt REQUIRED CONFIG)
+find_package(lsplant REQUIRED CONFIG)
 
 add_library(ds_native SHARED
     native_hooks.cpp
     property_hooks.cpp
     system_hooks.cpp
     dlopen_hook.cpp
+    zygisk_main.cpp
+    config_loader.cpp
+    java_hooks.cpp
+    lsplant_wrapper.cpp
 )
+
+target_include_directories(ds_native PRIVATE include)
 
 target_link_libraries(ds_native
     PRIVATE
     lsplt::lsplt
+    lsplant::lsplant
     log
 )
 

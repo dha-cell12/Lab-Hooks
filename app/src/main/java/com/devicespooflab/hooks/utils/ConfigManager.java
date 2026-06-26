@@ -72,46 +72,7 @@ public class ConfigManager {
         allProperties = Collections.unmodifiableMap(new HashMap<>(loaded));
     }
 
-    // Bridge classes live on the XposedBridge classloader, not the module
-    // classloader, when loaded by Vector's zygisk path. Resolve through the
-    // bridge's loader so XSharedPreferences is actually found.
-    @SuppressWarnings("unchecked")
-    private static Map<String, String> readXSharedPreferences() {
-        try {
-            ClassLoader bridgeLoader = de.robv.android.xposed.XposedBridge.class.getClassLoader();
-            Class<?> xprefsClass = bridgeLoader == null
-                    ? Class.forName("de.robv.android.xposed.XSharedPreferences")
-                    : Class.forName("de.robv.android.xposed.XSharedPreferences", true, bridgeLoader);
-            Object prefs = xprefsClass
-                    .getConstructor(String.class, String.class)
-                    .newInstance("com.devicespooflab.hooks", "config");
-            try {
-                xprefsClass.getMethod("makeWorldReadable").invoke(prefs);
-            } catch (Throwable ignored) {
-            }
-            try {
-                xprefsClass.getMethod("reload").invoke(prefs);
-            } catch (Throwable ignored) {
-            }
-            Map<String, ?> raw = (Map<String, ?>) xprefsClass
-                    .getMethod("getAll").invoke(prefs);
-            int size = raw == null ? 0 : raw.size();
-            android.util.Log.i("DeviceSpoofLab",
-                    "XSharedPreferences raw size=" + size);
-            if (raw == null || raw.isEmpty()) return null;
-            Map<String, String> out = new HashMap<>(raw.size());
-            for (Map.Entry<String, ?> e : raw.entrySet()) {
-                Object v = e.getValue();
-                out.put(e.getKey(), v == null ? "" : v.toString());
-            }
-            return out;
-        } catch (Throwable t) {
-            android.util.Log.w("DeviceSpoofLab",
-                    "XSharedPreferences failed: " + t.getClass().getSimpleName()
-                            + ": " + t.getMessage());
-            return null;
-        }
-    }
+    private static Map<String, String> readXSharedPreferences() { return null; }
 
     public static Map<String, String> getRawProperties() {
         Map<String, String> props = allProperties;
@@ -128,72 +89,21 @@ public class ConfigManager {
                 || processName.startsWith("com.devicespooflab.hooks:");
     }
 
-    public static synchronized boolean loadFromRemotePreferences() {
-        // libxposed:service memoizes RemotePreferences per group, so the fresh
-        // variant is required both for startup load and for refresh-poll reload.
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferencesFresh("config");
-        if (prefs == null) return false;
+    public static android.content.pm.ApplicationInfo getApplicationInfo(String packageName) {
         try {
-            Map<String, ?> raw = prefs.getAll();
-            if (raw == null || raw.isEmpty()) return false;
-            Map<String, String> result = new HashMap<>(raw.size());
-            for (Map.Entry<String, ?> e : raw.entrySet()) {
-                if (e.getKey() == null) continue;
-                Object v = e.getValue();
-                result.put(e.getKey(), v == null ? "" : v.toString());
-            }
-            Map<String, String> defaults = getEmbeddedDefaults();
-            for (Map.Entry<String, String> e : defaults.entrySet()) {
-                if (!result.containsKey(e.getKey())) {
-                    result.put(e.getKey(), e.getValue());
-                }
-            }
-            resetCaches();
-            allProperties = Collections.unmodifiableMap(result);
-            android.util.Log.i("DeviceSpoofLab",
-                    "Loaded " + result.size() + " properties from RemotePreferences");
-            return true;
-        } catch (Throwable t) {
-            android.util.Log.w("DeviceSpoofLab",
-                    "loadFromRemotePreferences failed: " + t.getClass().getSimpleName()
-                            + ": " + t.getMessage());
-            return false;
+            Class<?> activityThread = Class.forName("android.app.ActivityThread");
+            Object currentActivityThread = activityThread.getMethod("currentActivityThread").invoke(null);
+            Object systemContext = activityThread.getMethod("getSystemContext").invoke(currentActivityThread);
+            android.content.pm.PackageManager pm = (android.content.pm.PackageManager) systemContext.getClass().getMethod("getPackageManager").invoke(systemContext);
+            return pm.getApplicationInfo(packageName, 0);
+        } catch (Exception e) {
+            return null;
         }
     }
 
-    public static synchronized boolean publishToRemotePreferences() {
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferences("config");
-        if (prefs == null) return false;
-        try {
-            if (allProperties == null) init();
-            String generation = String.valueOf(System.currentTimeMillis());
-            android.content.SharedPreferences.Editor editor = prefs.edit().clear();
-            for (Map.Entry<String, String> e : allProperties.entrySet()) {
-                String k = e.getKey();
-                if (k == null) continue;
-                editor.putString(k, e.getValue() == null ? "" : e.getValue());
-            }
-            editor.putString(REMOTE_GENERATION_KEY, generation);
-            boolean ok = editor.commit();
-            if (ok) {
-                Map<String, String> mutable = new HashMap<>(allProperties);
-                mutable.put(REMOTE_GENERATION_KEY, generation);
-                allProperties = Collections.unmodifiableMap(mutable);
-            }
-            android.util.Log.i("DeviceSpoofLab",
-                    "publishToRemotePreferences commit=" + ok
-                            + " entries=" + allProperties.size()
-                            + " generation=" + generation);
-            return ok;
-        } catch (Throwable t) {
-            android.util.Log.w("DeviceSpoofLab",
-                    "publishToRemotePreferences failed: " + t.getClass().getSimpleName()
-                            + ": " + t.getMessage());
-            return false;
-        }
-    }
+    public static synchronized boolean loadFromRemotePreferences() { return false; }
+
+    public static synchronized boolean publishToRemotePreferences() { return false; }
 
     // Cross-process freshness marker stamped on each publish; target processes
     // compare it against their in-memory copy to detect new edits.
@@ -205,35 +115,7 @@ public class ConfigManager {
         return props.get(REMOTE_GENERATION_KEY);
     }
 
-    public static boolean refreshFromRemoteIfNewer(ClassLoader loader) {
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferencesFresh("config");
-        if (prefs == null) return false;
-        String remoteGen;
-        try {
-            remoteGen = prefs.getString(REMOTE_GENERATION_KEY, null);
-        } catch (Throwable t) {
-            return false;
-        }
-        if (remoteGen == null || remoteGen.isEmpty()) return false;
-        String localGen = getLocalRemoteGeneration();
-        if (remoteGen.equals(localGen)) return false;
-        boolean reloaded = loadFromRemotePreferences();
-        if (reloaded) {
-            if (loader != null) {
-                try {
-                    com.devicespooflab.hooks.hooks.BuildHooks.refreshStaticFields(loader);
-                } catch (Throwable t) {
-                    android.util.Log.w("DeviceSpoofLab",
-                            "BuildHooks.refreshStaticFields during refresh failed: "
-                                    + t.getMessage());
-                }
-            }
-            android.util.Log.i("DeviceSpoofLab",
-                    "Remote config refreshed: " + localGen + " -> " + remoteGen);
-        }
-        return reloaded;
-    }
+    public static boolean refreshFromRemoteIfNewer(ClassLoader loader) { return false; }
 
     private static void resetCaches() {
         cachedIMEI = null;

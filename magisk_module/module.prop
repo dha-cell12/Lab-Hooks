@@ -1,0 +1,7 @@
+id=devicespooflab_hooks
+name=DeviceSpoofLab Hooks
+version=v1.2
+versionCode=4
+author=DeviceSpoofLab
+description=A Zygisk module to spoof device identifiers.
+zygisk=true
