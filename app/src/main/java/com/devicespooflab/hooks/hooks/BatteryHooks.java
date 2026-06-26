@@ -6,7 +6,7 @@ import com.devicespooflab.hooks.LSPlantJavaWrapper;
 import com.devicespooflab.hooks.ZygiskMethodHook;
 
 public class BatteryHooks {
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             LSPlantJavaWrapper.findAndHookMethod(BatteryManager.class, "getIntProperty",
                     int.class,
@@ -40,5 +40,5 @@ public class BatteryHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

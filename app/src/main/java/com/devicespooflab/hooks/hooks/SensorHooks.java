@@ -19,7 +19,7 @@ public class SensorHooks {
     private static final String TAG = "DeviceSpoofLab-Sensor";
     private static final String[] DENY = {"goldfish", "ranchu", "emulator", "qemu", "vbox"};
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             LSPlantJavaWrapper.findAndHookMethod(SensorManager.class, "getSensorList",
                     int.class,
@@ -90,5 +90,5 @@ public class SensorHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

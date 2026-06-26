@@ -20,7 +20,7 @@ public class DisplayHooks {
     private static final String TAG = "DeviceSpoofLab-Display";
     private static final float REFRESH_RATE_HZ = 120.0f;
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             hookDisplayMethods();
             hookResourcesGetDisplayMetrics();
@@ -136,7 +136,7 @@ public class DisplayHooks {
     private static void hookWindowMetrics(XC_LoadPackage.LoadPackageParam lpparam) {
         // Android 11+: WindowMetrics.getBounds() returns a Rect with the display
         // bounds. Apps using this code path bypass the legacy Display getters.
-        Class<?> wmClass = findClass(
+        Class<?> wmClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.view.WindowMetrics", classLoader);
         if (wmClass == null) return;
 
@@ -178,5 +178,5 @@ public class DisplayHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

@@ -17,7 +17,7 @@ public class BuildHooks {
 
     private static final String TAG = "DeviceSpoofLab-Build";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             Class<?> buildClass = findBuildClass(classLoader);
             if (buildClass == null) {
@@ -63,9 +63,9 @@ public class BuildHooks {
     }
 
     private static Class<?> findBuildClass(ClassLoader classLoader) {
-        Class<?> buildClass = findClass("android.os.Build", classLoader);
+        Class<?> buildClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build", classLoader);
         if (buildClass == null) {
-            buildClass = findClass("android.os.Build", ClassLoader.getSystemClassLoader());
+            buildClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build", ClassLoader.getSystemClassLoader());
         }
         return buildClass;
     }
@@ -111,9 +111,9 @@ public class BuildHooks {
     }
 
     private static void spoofVersionFields(ClassLoader classLoader) {
-        Class<?> versionClass = findClass("android.os.Build$VERSION", classLoader);
+        Class<?> versionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$VERSION", classLoader);
         if (versionClass == null) {
-            versionClass = findClass("android.os.Build$VERSION", ClassLoader.getSystemClassLoader());
+            versionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$VERSION", ClassLoader.getSystemClassLoader());
         }
         if (versionClass == null) {
             return;
@@ -227,9 +227,9 @@ public class BuildHooks {
     }
 
     private static void hookPartitionMethods(ClassLoader classLoader) {
-        Class<?> partitionClass = findClass("android.os.Build$Partition", classLoader);
+        Class<?> partitionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$Partition", classLoader);
         if (partitionClass == null) {
-            partitionClass = findClass("android.os.Build$Partition", ClassLoader.getSystemClassLoader());
+            partitionClass = com.devicespooflab.hooks.ZygiskEntry.findClass("android.os.Build$Partition", ClassLoader.getSystemClassLoader());
         }
         if (partitionClass == null) {
             return;
@@ -421,5 +421,5 @@ public class BuildHooks {
         return values;
     }
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

@@ -22,7 +22,7 @@ public class NetworkHooks {
     private static final String TAG = "DeviceSpoofLab-Network";
     private static final byte[] EMPTY_MAC = new byte[0];
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         hookWifiInfo(lpparam);
         hookWifiManager(lpparam);
         hookBluetoothAdapter(lpparam);
@@ -30,7 +30,7 @@ public class NetworkHooks {
     }
 
     private static void hookWifiInfo(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> wifiInfo = findClass(
+        Class<?> wifiInfo = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.net.wifi.WifiInfo", classLoader);
         if (wifiInfo == null) return;
 
@@ -68,7 +68,7 @@ public class NetworkHooks {
     }
 
     private static void hookWifiManager(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> wm = findClass(
+        Class<?> wm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.net.wifi.WifiManager", classLoader);
         if (wm == null) return;
 
@@ -89,7 +89,7 @@ public class NetworkHooks {
     }
 
     private static void hookBluetoothAdapter(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> ba = findClass(
+        Class<?> ba = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.bluetooth.BluetoothAdapter", classLoader);
         if (ba == null) return;
 
@@ -196,5 +196,5 @@ public class NetworkHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

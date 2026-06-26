@@ -1,40 +1,41 @@
 package com.devicespooflab.hooks;
 
 import android.util.Log;
-import com.devicespooflab.hooks.hooks.BatteryHooks;
+import com.devicespooflab.hooks.hooks.*;
 import com.devicespooflab.hooks.utils.ConfigManager;
 import java.util.Map;
 
 public class ZygiskEntry {
     private static final String TAG = "DeviceSpoofLab-ZygiskEntry";
 
-    public static void init(ClassLoader classLoader) {
-        Log.i(TAG, "Initializing Java hooks from Zygisk");
+    public static void init(ClassLoader classLoader, String processName) {
+        Log.i(TAG, "Initializing Java hooks from Zygisk for process: " + processName);
         if (classLoader == null) {
-            classLoader = ZygiskEntry.class.getClassLoader();
+            classLoader = Thread.currentThread().getContextClassLoader();
         }
+
         try {
-            com.devicespooflab.hooks.hooks.AccountHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.AdvertisingIdHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.AppSetIdHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.BatteryHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.BuildHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.CameraHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.DisplayHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.EuiccHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.HardwareHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.InputDeviceHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.LocaleHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.MediaDrmHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.NetworkHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.PackageInfoHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.PackageManagerHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.SensorHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.SettingsHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.StorageHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.SystemPropertiesHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.TelephonyHooks.hook(classLoader);
-            com.devicespooflab.hooks.hooks.WebViewHooks.hook(classLoader);
+            AccountHooks.hook(classLoader, processName);
+            AdvertisingIdHooks.hook(classLoader, processName);
+            AppSetIdHooks.hook(classLoader, processName);
+            BatteryHooks.hook(classLoader, processName);
+            BuildHooks.hook(classLoader, processName);
+            CameraHooks.hook(classLoader, processName);
+            DisplayHooks.hook(classLoader, processName);
+            EuiccHooks.hook(classLoader, processName);
+            HardwareHooks.hook(classLoader, processName);
+            InputDeviceHooks.hook(classLoader, processName);
+            LocaleHooks.hook(classLoader, processName);
+            MediaDrmHooks.hook(classLoader, processName);
+            NetworkHooks.hook(classLoader, processName);
+            PackageInfoHooks.hook(classLoader, processName);
+            PackageManagerHooks.hook(classLoader, processName);
+            SensorHooks.hook(classLoader, processName);
+            SettingsHooks.hook(classLoader, processName);
+            StorageHooks.hook(classLoader, processName);
+            SystemPropertiesHooks.hook(classLoader, processName);
+            TelephonyHooks.hook(classLoader, processName);
+            WebViewHooks.hook(classLoader, processName);
         } catch (Throwable t) {
             Log.e(TAG, "Failed to init Zygisk Java hooks", t);
         }
@@ -43,5 +44,13 @@ public class ZygiskEntry {
     public static void setConfig(Map<String, String> config) {
         ConfigManager.setProperties(config);
         Log.i(TAG, "Config updated from Zygisk: " + config.size() + " entries");
+    }
+
+    public static Class<?> findClass(String name, ClassLoader loader) {
+        try {
+            return Class.forName(name, true, loader);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

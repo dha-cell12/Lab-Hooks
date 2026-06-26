@@ -21,7 +21,7 @@ public class SystemPropertiesHooks {
     private static final Set<Class<?>> HOOKED_CLASSES =
             Collections.newSetFromMap(new ConcurrentHashMap<Class<?>, Boolean>());
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             hookSystemProperties(classLoader);
 
@@ -39,7 +39,7 @@ public class SystemPropertiesHooks {
     }
 
     private static void hookSystemProperties(ClassLoader classLoader) {
-        Class<?> sysPropClass = findClass(SYSTEM_PROPERTIES_CLASS, classLoader);
+        Class<?> sysPropClass = com.devicespooflab.hooks.ZygiskEntry.findClass(SYSTEM_PROPERTIES_CLASS, classLoader);
 
         if (sysPropClass == null) {
             return;
@@ -159,5 +159,5 @@ public class SystemPropertiesHooks {
         }
     }
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

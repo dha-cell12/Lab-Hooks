@@ -20,7 +20,7 @@ public class LocaleHooks {
 
     private static final String TAG = "DeviceSpoofLab-Locale";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         hookTimeZone();
         hookLocale();
         if (Build.VERSION.SDK_INT >= 24) {
@@ -103,5 +103,5 @@ public class LocaleHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

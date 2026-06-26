@@ -11,8 +11,8 @@ import com.devicespooflab.hooks.utils.ConfigManager;
 
 public class TelephonyHooks {
 
-    public static void hook(ClassLoader classLoader) {
-        Class<?> telephonyManager = findClass(
+    public static void hook(ClassLoader classLoader, String processName) {
+        Class<?> telephonyManager = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.telephony.TelephonyManager",
                 classLoader
         );
@@ -252,7 +252,7 @@ public class TelephonyHooks {
 
         // Android 13+ replaced TelephonyManager.getLine1Number() with
         // SubscriptionManager.getPhoneNumber(int) and getPhoneNumber(int, int).
-        Class<?> subscriptionManager = findClass(
+        Class<?> subscriptionManager = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.telephony.SubscriptionManager", classLoader);
         if (subscriptionManager != null) {
             ZygiskMethodHook phoneNumberHook = new ZygiskMethodHook() {
@@ -276,5 +276,5 @@ public class TelephonyHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

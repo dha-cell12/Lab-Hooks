@@ -44,8 +44,8 @@ public class AdvertisingIdHooks {
     private static volatile long sWatcherDeadlineNanos = 0L;
     private static final long WATCHER_BUDGET_NANOS = 120_000_000_000L;
 
-    public static void hook(ClassLoader classLoader) {
-        Class<?> advertisingIdInfoClass = findClass(
+    public static void hook(ClassLoader classLoader, String processName) {
+        Class<?> advertisingIdInfoClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "com.google.android.gms.ads.identifier.AdvertisingIdClient$Info",
                 classLoader);
         if (advertisingIdInfoClass != null) {
@@ -80,7 +80,7 @@ public class AdvertisingIdHooks {
 
         // AIDL stub proxy — covers callers that bypass the Info class and
         // invoke IAdvertisingIdService directly via reflection.
-        Class<?> adIdServiceStub = findClass(
+        Class<?> adIdServiceStub = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "com.google.android.gms.ads.identifier.internal.IAdvertisingIdService$Stub$Proxy",
                 classLoader);
         if (adIdServiceStub != null) {
@@ -100,7 +100,7 @@ public class AdvertisingIdHooks {
         // Android 14+ Privacy Sandbox AdId. The framework constructs this
         // from the IPC reply, so the constructor hook catches the value as
         // it crosses into app code.
-        Class<?> adIdClass = findClass(
+        Class<?> adIdClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.adservices.adid.AdId", classLoader);
         if (adIdClass != null) {
             try {
@@ -176,7 +176,7 @@ public class AdvertisingIdHooks {
     private static void hookIAdvertisingIdServiceStub(XC_LoadPackage.LoadPackageParam lpparam) {
         // Direct path: if the Stub class is already on the classpath, hook it now
         // and skip the class-load watcher entirely.
-        Class<?> stub = findClass(GAID_STUB_NAME, classLoader);
+        Class<?> stub = com.devicespooflab.hooks.ZygiskEntry.findClass(GAID_STUB_NAME, classLoader);
         if (stub != null) {
             installStubOnTransactHook(stub);
             return;
@@ -187,7 +187,7 @@ public class AdvertisingIdHooks {
         // process (cache hits and parent-delegation passes included) and risks
         // reentrancy if the callback ever triggers a class load — watch the single
         // narrow choke point that every dex-backed loader funnels real class
-        // *definitions* through: BaseDexClassLoader.findClass(String). Standard
+        // *definitions* through: BaseDexClassLoader.com.devicespooflab.hooks.ZygiskEntry.findClass(String). Standard
         // loaders (PathClassLoader / DexClassLoader / DelegateLastClassLoader) and
         // the Chimera module loaders all inherit it, it fires only on first
         // definition, and the watcher retires itself the instant it lands a
@@ -224,7 +224,7 @@ public class AdvertisingIdHooks {
                     if (!(result instanceof Class)) return;
                     Class<?> cls = (Class<?>) result;
                     // Hot path is String-only (getName + equals): it touches no
-                    // uninitialised classes, so it never re-enters findClass().
+                    // uninitialised classes, so it never re-enters com.devicespooflab.hooks.ZygiskEntry.findClass().
                     String n = cls.getName();
                     if (GAID_STUB_NAME.equals(n)) {
                         installStubOnTransactHook(cls);
@@ -360,5 +360,5 @@ public class AdvertisingIdHooks {
         }
     }
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

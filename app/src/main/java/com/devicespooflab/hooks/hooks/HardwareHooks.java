@@ -26,7 +26,7 @@ public class HardwareHooks {
     private static final Set<Class<?>> HOOKED_ACTIVITY_MANAGER_CLASSES =
             Collections.newSetFromMap(new ConcurrentHashMap<Class<?>, Boolean>());
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             hookRuntimeCores();
             hookActivityManagerMemory(lpparam);
@@ -59,7 +59,7 @@ public class HardwareHooks {
 
     private static void hookActivityManagerMemory(XC_LoadPackage.LoadPackageParam lpparam) {
         try {
-            Class<?> activityManagerClass = findClass(
+            Class<?> activityManagerClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ActivityManager", classLoader);
 
             if (activityManagerClass == null) {
@@ -133,5 +133,5 @@ public class HardwareHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

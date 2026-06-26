@@ -12,8 +12,8 @@ public class CameraHooks {
 
     private static final String TAG = "DeviceSpoofLab-Camera";
 
-    public static void hook(ClassLoader classLoader) {
-        Class<?> cm = findClass(
+    public static void hook(ClassLoader classLoader, String processName) {
+        Class<?> cm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.hardware.camera2.CameraManager", classLoader);
         if (cm == null) return;
 
@@ -43,5 +43,5 @@ public class CameraHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

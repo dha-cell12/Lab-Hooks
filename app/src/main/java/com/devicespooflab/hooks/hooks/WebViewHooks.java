@@ -30,7 +30,7 @@ public class WebViewHooks {
 
     private static final String TAG = "DeviceSpoofLab-WebView";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             hookWebSettings(lpparam);
             hookWebViewConstructor(lpparam);
@@ -43,7 +43,7 @@ public class WebViewHooks {
     }
 
     private static void hookWebSettings(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = findClass(
+        Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
@@ -68,7 +68,7 @@ public class WebViewHooks {
     }
 
     private static void hookWebViewConstructor(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = findClass(
+        Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
@@ -106,7 +106,7 @@ public class WebViewHooks {
     }
 
     private static void hookSetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = findClass(
+        Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
@@ -125,7 +125,7 @@ public class WebViewHooks {
     }
 
     private static void hookGetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = findClass(
+        Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
@@ -147,7 +147,7 @@ public class WebViewHooks {
     }
 
     private static void hookLoadUrl(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = findClass(
+        Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
@@ -532,5 +532,5 @@ public class WebViewHooks {
             "})();";
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

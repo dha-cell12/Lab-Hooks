@@ -14,7 +14,7 @@ public class InputDeviceHooks {
 
     private static final String TAG = "DeviceSpoofLab-InputDevice";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             LSPlantJavaWrapper.findAndHookMethod(InputDevice.class, "getName",
                     new ZygiskMethodHook() {
@@ -51,5 +51,5 @@ public class InputDeviceHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

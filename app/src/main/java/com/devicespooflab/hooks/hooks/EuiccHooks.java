@@ -16,14 +16,14 @@ public class EuiccHooks {
 
     private static final String TAG = "DeviceSpoofLab-Euicc";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         hook(lpparam, Build.VERSION.SDK_INT);
     }
 
     public static void hook(ClassLoader classLoader, int realDeviceSdk) {
         if (realDeviceSdk < 28) return;
 
-        Class<?> em = findClass(
+        Class<?> em = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.telephony.euicc.EuiccManager", classLoader);
         if (em == null) return;
 
@@ -42,5 +42,5 @@ public class EuiccHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

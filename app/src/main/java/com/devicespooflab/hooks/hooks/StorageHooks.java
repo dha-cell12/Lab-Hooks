@@ -17,7 +17,7 @@ public class StorageHooks {
     private static final String TAG = "DeviceSpoofLab-Storage";
     private static final long BLOCK_SIZE = 4096L;
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getBlockSizeLong",
                     new ZygiskMethodHook() {
@@ -94,5 +94,5 @@ public class StorageHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

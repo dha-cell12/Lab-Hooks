@@ -24,7 +24,7 @@ public class SettingsHooks {
     private static final String BLUETOOTH_NAME = "bluetooth_name";
     private static final String DEVICE_NAME = "device_name";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         hookClass(lpparam, "android.provider.Settings$Secure",
                 SPOOF_ANDROID_ID | SPOOF_GSF_ID | SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
         hookClass(lpparam, "android.provider.Settings$System",
@@ -37,7 +37,7 @@ public class SettingsHooks {
     private static void hookClass(XC_LoadPackage.LoadPackageParam lpparam,
                                   String className,
                                   int spoofFlags) {
-        Class<?> clazz = findClass(className, classLoader);
+        Class<?> clazz = com.devicespooflab.hooks.ZygiskEntry.findClass(className, classLoader);
         if (clazz == null) return;
 
         try {
@@ -108,5 +108,5 @@ public class SettingsHooks {
         }
     }
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

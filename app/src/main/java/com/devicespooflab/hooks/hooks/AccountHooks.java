@@ -17,12 +17,12 @@ public class AccountHooks {
 
     private static final String TAG = "DeviceSpoofLab-Account";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         if (!ConfigManager.isHideAccountsEnabled()) {
             return;
         }
 
-        Class<?> am = findClass(
+        Class<?> am = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.accounts.AccountManager", classLoader);
         if (am == null) return;
 
@@ -51,5 +51,5 @@ public class AccountHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

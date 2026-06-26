@@ -20,14 +20,14 @@ public class PackageInfoHooks {
     private static final String TAG = "DeviceSpoofLab-PackageInfo";
     private static final long DAY_MS = 86_400_000L;
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         hookPackageInfoFields(lpparam);
         hookGetInstallerPackageName(lpparam);
         hookGetInstallSourceInfo(lpparam);
     }
 
     private static void hookPackageInfoFields(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appPm = findClass(
+        Class<?> appPm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
@@ -48,7 +48,7 @@ public class PackageInfoHooks {
         } catch (Throwable t) { logFail("getPackageInfo(String,int)", t); }
 
         try {
-            Class<?> flags = findClass(
+            Class<?> flags = com.devicespooflab.hooks.ZygiskEntry.findClass(
                     "android.content.pm.PackageManager$PackageInfoFlags", classLoader);
             if (flags != null) {
                 LSPlantJavaWrapper.findAndHookMethod(appPm, "getPackageInfo",
@@ -58,7 +58,7 @@ public class PackageInfoHooks {
     }
 
     private static void hookGetInstallerPackageName(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appPm = findClass(
+        Class<?> appPm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
@@ -79,10 +79,10 @@ public class PackageInfoHooks {
 
     private static boolean shouldSpoofInstaller(XC_LoadPackage.LoadPackageParam lpparam,
                                                 String packageName) {
-        if (packageName == null || "" == null) {
+        if (processName == null) {
             return false;
         }
-        if (!"".equals(packageName)) {
+        if (!processName.equals(packageName)) {
             return false;
         }
         if (ConfigManager.isOwnPackageProcess("")) {
@@ -96,11 +96,11 @@ public class PackageInfoHooks {
     }
 
     private static void hookGetInstallSourceInfo(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appPm = findClass(
+        Class<?> appPm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
-        Class<?> sourceInfo = findClass(
+        Class<?> sourceInfo = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.content.pm.InstallSourceInfo", classLoader);
         if (sourceInfo == null) return;
 
@@ -153,5 +153,5 @@ public class PackageInfoHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

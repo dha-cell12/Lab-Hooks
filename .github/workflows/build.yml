@@ -1,0 +1,46 @@
+name: Build Android App
+
+on:
+  push:
+    branches: [ "main", "master", "zygisk-*" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew assembleRelease
+
+    - name: Package Magisk Module
+      run: |
+        mkdir -p out/zygisk
+        # For simplicity, we use the APK as the module base or just artifacts
+        # Real Magisk module packaging would require more logic to extract .so from APK
+        # and create the ZIP structure.
+        # For now, we provide the APK and the native libs as separate artifacts.
+        cp app/build/outputs/apk/release/*.apk out/
+        find app/build/intermediates/cmake/release/obj -name "*.so" -exec cp {} out/zygisk/ \;
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: devicespooflab-zygisk-build
+        path: out/

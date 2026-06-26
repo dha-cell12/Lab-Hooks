@@ -33,7 +33,7 @@ public class AppSetIdHooks {
     private static final String IAPPSET_SERVICE_DESCRIPTOR =
             "com.google.android.gms.appset.internal.IAppSetService";
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         hook(lpparam, Build.VERSION.SDK_INT);
     }
 
@@ -60,7 +60,7 @@ public class AppSetIdHooks {
     // ---- Client-side substitution ----
 
     private static void hookClientSide(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appSetIdInfoClass = findClass(
+        Class<?> appSetIdInfoClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "com.google.android.gms.appset.AppSetIdInfo", classLoader);
         if (appSetIdInfoClass != null) {
             try {
@@ -103,7 +103,7 @@ public class AppSetIdHooks {
         }
 
         // AIDL service proxy — for callers that bypass AppSetIdInfo entirely.
-        Class<?> appSetServiceStub = findClass(
+        Class<?> appSetServiceStub = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "com.google.android.gms.appset.internal.IAppSetService$Stub$Proxy",
                 classLoader);
         if (appSetServiceStub != null) {
@@ -130,7 +130,7 @@ public class AppSetIdHooks {
         // Android 14+ Privacy Sandbox AppSetId. The framework constructs this
         // from the IPC reply, so the constructor hook catches the value as it
         // crosses into app code.
-        Class<?> systemAppSetId = findClass(
+        Class<?> systemAppSetId = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.adservices.appsetid.AppSetId", classLoader);
         if (systemAppSetId != null) {
             try {
@@ -357,5 +357,5 @@ public class AppSetIdHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

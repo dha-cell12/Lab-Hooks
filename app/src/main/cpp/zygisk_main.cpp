@@ -69,6 +69,7 @@ public:
         if (nice_name) {
             std::string process_name(nice_name);
             env->ReleaseStringUTFChars(args->nice_name, nice_name);
+            this->process_name = process_name;
 
             if (process_name == "com.devicespooflab.hooks") {
                 api->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
@@ -120,9 +121,21 @@ public:
                 }
 
                 // Initialize Java hooks
-                jmethodID initMID = env->GetStaticMethodID(entryClass, "init", "(Ljava/lang/ClassLoader;)V");
+                jmethodID initMID = env->GetStaticMethodID(entryClass, "init", "(Ljava/lang/ClassLoader;Ljava/lang/String;)V");
                 if (initMID) {
-                    env->CallStaticVoidMethod(entryClass, initMID, nullptr);
+                    // Try to get the PathClassLoader from the current thread
+                    jclass threadClass = env->FindClass("java/lang/Thread");
+                    jmethodID currentThreadMID = env->GetStaticMethodID(threadClass, "currentThread", "()Ljava/lang/Thread;");
+                    jobject currentThread = env->CallStaticObjectMethod(threadClass, currentThreadMID);
+                    jmethodID getContextClassLoaderMID = env->GetMethodID(threadClass, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
+                    jobject classLoader = env->CallObjectMethod(currentThread, getContextClassLoaderMID);
+
+                    jstring processNameJ = env->NewStringUTF(process_name.c_str());
+                    env->CallStaticVoidMethod(entryClass, initMID, classLoader, processNameJ);
+
+                    env->DeleteLocalRef(processNameJ);
+                    env->DeleteLocalRef(classLoader);
+                    env->DeleteLocalRef(currentThread);
                 }
             }
 
@@ -135,6 +148,7 @@ private:
     Api *api;
     JNIEnv *env;
     bool enable_hook = false;
+    std::string process_name;
 };
 
 REGISTER_ZYGISK_MODULE(DeviceSpoofModule)

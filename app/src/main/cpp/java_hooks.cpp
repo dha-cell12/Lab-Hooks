@@ -20,22 +20,7 @@ void InstallJavaHooks(JNIEnv* env) {
         }
     }
 
-    // Trigger Java ZygiskEntry.init()
-    jclass entryClass = env->FindClass("com/devicespooflab/hooks/ZygiskEntry");
-    if (entryClass) {
-        jmethodID initMID = env->GetStaticMethodID(entryClass, "init", "(Ljava/lang/ClassLoader;)V");
-        if (initMID) {
-            // Get current class loader
-            jclass threadClass = env->FindClass("java/lang/Thread");
-            jmethodID currentThreadMID = env->GetStaticMethodID(threadClass, "currentThread", "()Ljava/lang/Thread;");
-            jobject currentThread = env->CallStaticObjectMethod(threadClass, currentThreadMID);
-            jmethodID getContextClassLoaderMID = env->GetMethodID(threadClass, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
-            jobject classLoader = env->CallObjectMethod(currentThread, getContextClassLoaderMID);
-
-            env->CallStaticVoidMethod(entryClass, initMID, classLoader);
-            LOGI("Java ZygiskEntry.init() triggered for all hooks");
-        }
-    }
+    // Logic moved to zygisk_main.cpp to handle processName parameter correctly
 }
 
 } // namespace ds

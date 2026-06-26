@@ -13,8 +13,8 @@ public class MediaDrmHooks {
 
     private static final String DEVICE_UNIQUE_ID = "deviceUniqueId";
 
-    public static void hook(ClassLoader classLoader) {
-        Class<?> mediaDrmClass = findClass(
+    public static void hook(ClassLoader classLoader, String processName) {
+        Class<?> mediaDrmClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.media.MediaDrm",
                 classLoader
         );
@@ -42,5 +42,5 @@ public class MediaDrmHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }

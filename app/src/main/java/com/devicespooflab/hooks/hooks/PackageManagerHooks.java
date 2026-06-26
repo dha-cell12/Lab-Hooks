@@ -110,9 +110,9 @@ public class PackageManagerHooks {
         "goldfish"
     ));
 
-    public static void hook(ClassLoader classLoader) {
+    public static void hook(ClassLoader classLoader, String processName) {
         try {
-            Class<?> appPackageManagerClass = findClass(
+            Class<?> appPackageManagerClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
 
             if (appPackageManagerClass != null) {
@@ -232,5 +232,5 @@ public class PackageManagerHooks {
     }
 
 
-    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
+
 }
