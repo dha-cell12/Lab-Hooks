@@ -18,11 +18,15 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_devicespooflab_hooks_LSPlantJavaWrapper_nativeHook(JNIEnv* env, jclass /*clazz*/, jobject method, jobject hooker, jobject callback) {
     std::lock_guard<std::mutex> lock(g_hook_mutex);
 
+    jmethodID targetMID = env->FromReflectedMethod(method);
+    if (g_backups.find(targetMID) != g_backups.end()) {
+        return; // Already hooked
+    }
+
     jobject target = env->NewGlobalRef(method);
     jobject backup = lsplant::Hook(env, target, hooker, callback);
 
     if (backup) {
-        jmethodID targetMID = env->FromReflectedMethod(method);
         g_backups[targetMID] = env->NewGlobalRef(backup);
         LOGI("Successfully hooked method via LSPlant");
     } else {
@@ -30,8 +34,25 @@ Java_com_devicespooflab_hooks_LSPlantJavaWrapper_nativeHook(JNIEnv* env, jclass 
     }
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_devicespooflab_hooks_LSPlantJavaWrapper_nativeUnhook(JNIEnv* env, jclass /*clazz*/, jobject method) {
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+
+    jmethodID targetMID = env->FromReflectedMethod(method);
+    auto it = g_backups.find(targetMID);
+    if (it != g_backups.end()) {
+        if (lsplant::UnHook(env, method)) {
+            env->DeleteGlobalRef(it->second);
+            g_backups.erase(it);
+            LOGI("Successfully unhooked method via LSPlant");
+        } else {
+            LOGE("Failed to unhook method via LSPlant");
+        }
+    }
+}
+
 extern "C" JNIEXPORT jobject JNICALL
-Java_com_devicespooflab_hooks_LSPlantJavaWrapper_callOriginal(JNIEnv* env, jclass /*clazz*/, jobject method, jobjectArray args) {
+Java_com_devicespooflab_hooks_LSPlantJavaWrapper_callOriginal(JNIEnv* env, jclass /*clazz*/, jobject method, jobject thisObject, jobjectArray args) {
     jmethodID targetMID = env->FromReflectedMethod(method);
     jobject backup = nullptr;
 
@@ -51,5 +72,5 @@ Java_com_devicespooflab_hooks_LSPlantJavaWrapper_callOriginal(JNIEnv* env, jclas
     jclass methodClass = env->FindClass("java/lang/reflect/Method");
     jmethodID invokeMID = env->GetMethodID(methodClass, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
 
-    return env->CallObjectMethod(backup, invokeMID, nullptr, args);
+    return env->CallObjectMethod(backup, invokeMID, thisObject, args);
 }

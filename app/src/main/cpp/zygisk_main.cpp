@@ -84,7 +84,13 @@ public:
                 if (read(socket, &size, sizeof(size)) == sizeof(size) && size > 0) {
                     std::string content;
                     content.resize(size);
-                    read(socket, &content[0], size);
+
+                    size_t total_read = 0;
+                    while (total_read < (size_t)size) {
+                        ssize_t n = read(socket, &content[total_read], size - total_read);
+                        if (n <= 0) break;
+                        total_read += n;
+                    }
 
                     std::stringstream ss(content);
                     std::string line;

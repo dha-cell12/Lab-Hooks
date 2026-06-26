@@ -39,7 +39,7 @@ public class AdvertisingIdHooks {
     private static final AtomicBoolean sGetIdHooked = new AtomicBoolean(false);
     private static final AtomicBoolean sAttachIfaceHooked = new AtomicBoolean(false);
 
-    private static final List<Object> sWatcherUnhooks = new ArrayList<>();
+    private static final List<LSPlantJavaWrapper.Unhook> sWatcherUnhooks = new ArrayList<>();
     private static final AtomicBoolean sWatcherRetired = new AtomicBoolean(false);
     private static volatile long sWatcherDeadlineNanos = 0L;
     private static final long WATCHER_BUDGET_NANOS = 120_000_000_000L;
@@ -181,25 +181,17 @@ public class AdvertisingIdHooks {
             installStubOnTransactHook(stub);
             return;
         }
-        // Deferred path: the stub / Chimera impl is loaded lazily under a name we
-        // can't reference statically. Rather than hooking ClassLoader.loadClass on
-        // the base class — which fires for *every* lookup in *every* loader in the
-        // process (cache hits and parent-delegation passes included) and risks
-        // reentrancy if the callback ever triggers a class load — watch the single
-        // narrow choke point that every dex-backed loader funnels real class
-        // *definitions* through: BaseDexClassLoader.findClass(String). Standard
-        // loaders (PathClassLoader / DexClassLoader / DelegateLastClassLoader) and
-        // the Chimera module loaders all inherit it, it fires only on first
-        // definition, and the watcher retires itself the instant it lands a
-        // getId() hook (see watchForStub / removeWatchers).
+        // Deferred path: watch BaseDexClassLoader.findClass(String).
         ZygiskMethodHook watcher = watchForStub();
         sWatcherDeadlineNanos = System.nanoTime() + WATCHER_BUDGET_NANOS;
         try {
             Class<?> baseDex = Class.forName("dalvik.system.BaseDexClassLoader");
-            LSPlantJavaWrapper.findAndHookMethod(
-                    baseDex, "findClass", String.class, watcher);
-            synchronized (sWatcherUnhooks) {
-                // //;
+            Method findClass = baseDex.getDeclaredMethod("findClass", String.class);
+            LSPlantJavaWrapper.Unhook u = LSPlantJavaWrapper.hookMethod(findClass, watcher);
+            if (u != null) {
+                synchronized (sWatcherUnhooks) {
+                    sWatcherUnhooks.add(u);
+                }
             }
         } catch (Throwable t) {
             android.util.Log.i("DeviceSpoofLab-GAID", "class-load watcher install failed: "
@@ -249,8 +241,8 @@ public class AdvertisingIdHooks {
     private static void removeWatchers() {
         if (!sWatcherRetired.compareAndSet(false, true)) return;
         synchronized (sWatcherUnhooks) {
-            for (Object u : sWatcherUnhooks) {
-                // u.unhook();
+            for (LSPlantJavaWrapper.Unhook u : sWatcherUnhooks) {
+                u.unhook();
             }
             sWatcherUnhooks.clear();
         }

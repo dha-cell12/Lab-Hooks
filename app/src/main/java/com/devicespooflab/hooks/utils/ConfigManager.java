@@ -89,6 +89,18 @@ public class ConfigManager {
                 || processName.startsWith("com.devicespooflab.hooks:");
     }
 
+    public static android.content.pm.ApplicationInfo getApplicationInfo(String packageName) {
+        try {
+            Class<?> activityThread = Class.forName("android.app.ActivityThread");
+            Object currentActivityThread = activityThread.getMethod("currentActivityThread").invoke(null);
+            Object systemContext = activityThread.getMethod("getSystemContext").invoke(currentActivityThread);
+            android.content.pm.PackageManager pm = (android.content.pm.PackageManager) systemContext.getClass().getMethod("getPackageManager").invoke(systemContext);
+            return pm.getApplicationInfo(packageName, 0);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static synchronized boolean loadFromRemotePreferences() { return false; }
 
     public static synchronized boolean publishToRemotePreferences() { return false; }

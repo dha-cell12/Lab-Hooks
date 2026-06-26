@@ -82,17 +82,21 @@ public class PackageInfoHooks {
         if (processName == null) {
             return false;
         }
+        // Spoof if we are checking the installer of the current process's package
         if (!processName.equals(packageName)) {
             return false;
         }
-        if (ConfigManager.isOwnPackageProcess("")) {
+        if (ConfigManager.isOwnPackageProcess(processName)) {
             return false;
         }
-        if (null /* appInfo */ == null) {
+
+        // Only spoof for non-system apps to avoid breaking system components
+        ApplicationInfo appInfo = ConfigManager.getApplicationInfo(processName);
+        if (appInfo == null) {
             return true;
         }
         int systemFlags = ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
-        return (0 & systemFlags) == 0;
+        return (appInfo.flags & systemFlags) == 0;
     }
 
     private static void hookGetInstallSourceInfo(ClassLoader classLoader, String processName) {
@@ -128,7 +132,7 @@ public class PackageInfoHooks {
         long install = stableInstallTime();
         pi.firstInstallTime = install;
         // lastUpdateTime: random within 0–14 days after install, stable per app.
-        pi.lastUpdateTime = install + (Math.abs(stableHash("")) % (14L * DAY_MS));
+        pi.lastUpdateTime = install + (Math.abs(stableHash(pi.packageName)) % (14L * DAY_MS));
     }
 
     private static long stableInstallTime() {

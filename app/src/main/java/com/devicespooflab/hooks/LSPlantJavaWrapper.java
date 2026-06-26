@@ -33,10 +33,33 @@ public class LSPlantJavaWrapper {
         }
     }
 
-    public static void findAndHookMethod(Class<?> clazz, String methodName, Object... parameterTypesAndCallback) {
-        if (parameterTypesAndCallback.length == 0) return;
+    public static class Unhook {
+        private final Member method;
+        private final ZygiskMethodHook callback;
+
+        public Unhook(Member method, ZygiskMethodHook callback) {
+            this.method = method;
+            this.callback = callback;
+        }
+
+        public void unhook() {
+            synchronized (hookMap) {
+                List<ZygiskMethodHook> hooks = hookMap.get(method);
+                if (hooks != null) {
+                    hooks.remove(callback);
+                    if (hooks.isEmpty()) {
+                        hookMap.remove(method);
+                        nativeUnhook(method);
+                    }
+                }
+            }
+        }
+    }
+
+    public static Unhook findAndHookMethod(Class<?> clazz, String methodName, Object... parameterTypesAndCallback) {
+        if (parameterTypesAndCallback.length == 0) return null;
         Object last = parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
-        if (!(last instanceof ZygiskMethodHook)) return;
+        if (!(last instanceof ZygiskMethodHook)) return null;
 
         ZygiskMethodHook callback = (ZygiskMethodHook) last;
         Class<?>[] parameterTypes = new Class<?>[parameterTypesAndCallback.length - 1];
@@ -46,21 +69,22 @@ public class LSPlantJavaWrapper {
 
         try {
             Method m = clazz.getDeclaredMethod(methodName, parameterTypes);
-            hookMethod(m, callback);
+            return hookMethod(m, callback);
         } catch (NoSuchMethodException e) {
             try {
                 Method m = clazz.getMethod(methodName, parameterTypes);
-                hookMethod(m, callback);
+                return hookMethod(m, callback);
             } catch (NoSuchMethodException e2) {
                 Log.e(TAG, "Method not found: " + methodName + " in " + clazz.getName());
+                return null;
             }
         }
     }
 
-    public static void findAndHookConstructor(Class<?> clazz, Object... parameterTypesAndCallback) {
-        if (parameterTypesAndCallback.length == 0) return;
+    public static Unhook findAndHookConstructor(Class<?> clazz, Object... parameterTypesAndCallback) {
+        if (parameterTypesAndCallback.length == 0) return null;
         Object last = parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
-        if (!(last instanceof ZygiskMethodHook)) return;
+        if (!(last instanceof ZygiskMethodHook)) return null;
 
         ZygiskMethodHook callback = (ZygiskMethodHook) last;
         Class<?>[] parameterTypes = new Class<?>[parameterTypesAndCallback.length - 1];
@@ -70,14 +94,15 @@ public class LSPlantJavaWrapper {
 
         try {
             java.lang.reflect.Constructor<?> c = clazz.getDeclaredConstructor(parameterTypes);
-            hookMethod(c, callback);
+            return hookMethod(c, callback);
         } catch (NoSuchMethodException e) {
             Log.e(TAG, "Constructor not found in " + clazz.getName());
+            return null;
         }
     }
 
-    public static void hookMethod(Member method, ZygiskMethodHook callback) {
-        if (method == null || callback == null) return;
+    public static Unhook hookMethod(Member method, ZygiskMethodHook callback) {
+        if (method == null || callback == null) return null;
         synchronized (hookMap) {
             List<ZygiskMethodHook> hooks = hookMap.get(method);
             if (hooks == null) {
@@ -92,6 +117,7 @@ public class LSPlantJavaWrapper {
             }
             hooks.add(callback);
         }
+        return new Unhook(method, callback);
     }
 
     public static Object entryPoint(Member method, Hooker hooker, Object[] args) throws Throwable {
@@ -124,17 +150,7 @@ public class LSPlantJavaWrapper {
             if (param.resultSet) return param.getResult();
         }
 
-        // Reconstruct args for original call if shifted
-        Object[] callArgs;
-        if (!isStatic && args != null && args.length > 0) {
-            callArgs = new Object[param.args.length + 1];
-            callArgs[0] = param.thisObject;
-            System.arraycopy(param.args, 0, callArgs, 1, param.args.length);
-        } else {
-            callArgs = param.args;
-        }
-
-        Object result = callOriginal(method, callArgs);
+        Object result = callOriginal(method, param.thisObject, param.args);
         param.setResult(result);
         param.resultSet = false;
 
@@ -150,7 +166,8 @@ public class LSPlantJavaWrapper {
     }
 
     private static native void nativeHook(Member method, Hooker hooker, Method callback);
-    private static native Object callOriginal(Member method, Object[] args) throws Throwable;
+    private static native void nativeUnhook(Member method);
+    private static native Object callOriginal(Member method, Object thisObject, Object[] args) throws Throwable;
 
     // Reflection Helpers
     public static void setObjectField(Object obj, String name, Object val) {

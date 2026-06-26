@@ -31,13 +31,50 @@ jobs:
 
     - name: Package Magisk Module
       run: |
-        mkdir -p out/zygisk
-        # For simplicity, we use the APK as the module base or just artifacts
-        # Real Magisk module packaging would require more logic to extract .so from APK
-        # and create the ZIP structure.
-        # For now, we provide the APK and the native libs as separate artifacts.
+        mkdir -p out
         cp app/build/outputs/apk/release/*.apk out/
-        find app/build/intermediates/cmake/release/obj -name "*.so" -exec cp {} out/zygisk/ \;
+
+        # Prepare Magisk Module zip structure
+        mkdir -p magisk_res/zygisk
+
+        # Find and copy native libraries with correct Zygisk naming
+        # The main library for Zygisk should be named <abi>.so in the zygisk/ folder
+        LIBS_DIR="app/build/intermediates/merged_native_libs/release/out/lib"
+        [ -d "$LIBS_DIR" ] || LIBS_DIR="app/build/intermediates/merged_native_libs/debug/out/lib"
+
+        for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+          if [ -f "$LIBS_DIR/$abi/libds_native.so" ]; then
+            cp "$LIBS_DIR/$abi/libds_native.so" "magisk_res/zygisk/$abi.so"
+            # Also copy dependencies if any are shared libs
+            for lib in lsplant lsplt c++_shared; do
+              if [ -f "$LIBS_DIR/$abi/lib$lib.so" ]; then
+                mkdir -p "magisk_res/system/lib"
+                [ "$abi" = "arm64-v8a" ] || [ "$abi" = "x86_64" ] && libdir="magisk_res/system/lib64" || libdir="magisk_res/system/lib"
+                mkdir -p "$libdir"
+                cp "$LIBS_DIR/$abi/lib$lib.so" "$libdir/"
+              fi
+            done
+          fi
+        done
+
+        # Copy other module files
+        cp magisk_module/module.prop magisk_res/
+        cp -r magisk_module/system magisk_res/ || true
+
+        # Create a simple update-binary for Magisk if missing
+        mkdir -p magisk_res/META-INF/com/google/android
+        if [ ! -f magisk_res/META-INF/com/google/android/update-binary ]; then
+          echo "#!/sbin/sh" > magisk_res/META-INF/com/google/android/update-binary
+          echo "echo \"Installing DeviceSpoofLab Zygisk Module\"" >> magisk_res/META-INF/com/google/android/update-binary
+          echo "unzip -o \"\$3\" 'zygisk/*' 'module.prop' 'system/*' -d \"\$1\"" >> magisk_res/META-INF/com/google/android/update-binary
+          echo "exit 0" >> magisk_res/META-INF/com/google/android/update-binary
+        fi
+        echo "# Magisk" > magisk_res/META-INF/com/google/android/updater-script
+
+        # Zip the module
+        cd magisk_res
+        zip -r ../out/devicespooflab-zygisk-module.zip .
+        cd ..
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
