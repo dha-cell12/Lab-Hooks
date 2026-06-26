@@ -22,7 +22,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getBlockSizeLong",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(BLOCK_SIZE);
                         }
                     });
@@ -32,7 +32,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getBlockCountLong",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getStorageTotalBytes() / BLOCK_SIZE);
                         }
                     });
@@ -42,7 +42,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getAvailableBlocksLong",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getStorageAvailableBytes() / BLOCK_SIZE);
                         }
                     });
@@ -52,7 +52,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getFreeBlocksLong",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getStorageAvailableBytes() / BLOCK_SIZE);
                         }
                     });
@@ -62,7 +62,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getTotalBytes",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getStorageTotalBytes());
                         }
                     });
@@ -72,7 +72,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getAvailableBytes",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getStorageAvailableBytes());
                         }
                     });
@@ -82,7 +82,7 @@ public class StorageHooks {
             LSPlantJavaWrapper.findAndHookMethod(StatFs.class, "getFreeBytes",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getStorageAvailableBytes());
                         }
                     });
@@ -90,7 +90,7 @@ public class StorageHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        android.util.Log.i(TAG + ": failed to hook StatFs." + what + ": " + t);
+        android.util.Log.i(TAG, "failed to hook StatFs." + what + ": " + t);
     }
 
 

@@ -21,19 +21,19 @@ public class PackageInfoHooks {
     private static final long DAY_MS = 86_400_000L;
 
     public static void hook(ClassLoader classLoader, String processName) {
-        hookPackageInfoFields(lpparam);
-        hookGetInstallerPackageName(lpparam);
-        hookGetInstallSourceInfo(lpparam);
+        hookPackageInfoFields(classLoader, processName);
+        hookGetInstallerPackageName(classLoader, processName);
+        hookGetInstallSourceInfo(classLoader, processName);
     }
 
-    private static void hookPackageInfoFields(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookPackageInfoFields(ClassLoader classLoader, String processName) {
         Class<?> appPm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
         ZygiskMethodHook patcher = new ZygiskMethodHook() {
             @Override
-            protected void afterHookedMethod(MethodHookParam param) {
+            public void afterHookedMethod(MethodHookParam param) {
                 Object result = param.getResult();
                 if (result instanceof PackageInfo) {
                     patch((PackageInfo) result);
@@ -57,7 +57,7 @@ public class PackageInfoHooks {
         } catch (Throwable t) { /* Android 13+ overload */ }
     }
 
-    private static void hookGetInstallerPackageName(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookGetInstallerPackageName(ClassLoader classLoader, String processName) {
         Class<?> appPm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
@@ -67,9 +67,9 @@ public class PackageInfoHooks {
                     String.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String packageName = (String) param.args[0];
-                            if (shouldSpoofInstaller(lpparam, packageName)) {
+                            if (shouldSpoofInstaller(processName, packageName)) {
                                 param.setResult(ConfigManager.getInstallerPackage());
                             }
                         }
@@ -77,7 +77,7 @@ public class PackageInfoHooks {
         } catch (Throwable t) { logFail("getInstallerPackageName", t); }
     }
 
-    private static boolean shouldSpoofInstaller(XC_LoadPackage.LoadPackageParam lpparam,
+    private static boolean shouldSpoofInstaller(String processName,
                                                 String packageName) {
         if (processName == null) {
             return false;
@@ -88,14 +88,14 @@ public class PackageInfoHooks {
         if (ConfigManager.isOwnPackageProcess("")) {
             return false;
         }
-        if (lpparam.appInfo == null) {
+        if (null /* appInfo */ == null) {
             return true;
         }
         int systemFlags = ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
-        return (lpparam.appInfo.flags & systemFlags) == 0;
+        return (0 & systemFlags) == 0;
     }
 
-    private static void hookGetInstallSourceInfo(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookGetInstallSourceInfo(ClassLoader classLoader, String processName) {
         Class<?> appPm = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
@@ -107,7 +107,7 @@ public class PackageInfoHooks {
         // InstallSourceInfo getters — hook each accessor to return Play Store.
         ZygiskMethodHook playStoreHook = new ZygiskMethodHook() {
             @Override
-            protected void afterHookedMethod(MethodHookParam param) {
+            public void afterHookedMethod(MethodHookParam param) {
                 param.setResult(ConfigManager.getInstallerPackage());
             }
         };
@@ -128,7 +128,7 @@ public class PackageInfoHooks {
         long install = stableInstallTime();
         pi.firstInstallTime = install;
         // lastUpdateTime: random within 0–14 days after install, stable per app.
-        pi.lastUpdateTime = install + (Math.abs(stableHash(pi.packageName)) % (14L * DAY_MS));
+        pi.lastUpdateTime = install + (Math.abs(stableHash("")) % (14L * DAY_MS));
     }
 
     private static long stableInstallTime() {
@@ -149,7 +149,7 @@ public class PackageInfoHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        android.util.Log.i(TAG + ": failed to hook " + what + ": " + t);
+        android.util.Log.i(TAG, "failed to hook " + what + ": " + t);
     }
 
 

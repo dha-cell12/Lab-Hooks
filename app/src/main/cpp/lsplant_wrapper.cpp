@@ -10,36 +10,16 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 namespace {
-    struct HookInfo {
-        jobject target;
-        jobject backup;
-    };
     std::unordered_map<jmethodID, jobject> g_backups;
     std::mutex g_hook_mutex;
-
-    jclass g_wrapper_class = nullptr;
-    jmethodID g_entry_point_mid = nullptr;
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_devicespooflab_hooks_LSPlantJavaWrapper_nativeHook(JNIEnv* env, jclass clazz, jobject method) {
+Java_com_devicespooflab_hooks_LSPlantJavaWrapper_nativeHook(JNIEnv* env, jclass /*clazz*/, jobject method, jobject hooker, jobject callback) {
     std::lock_guard<std::mutex> lock(g_hook_mutex);
 
-    // Find the callback method on the wrapper class
-    if (!g_wrapper_class) {
-        g_wrapper_class = (jclass)env->NewGlobalRef(clazz);
-        g_entry_point_mid = env->GetStaticMethodID(g_wrapper_class, "entryPoint",
-            "(Ljava/lang/reflect/Member;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-    }
-
-    // Prepare for LSPlant hook
     jobject target = env->NewGlobalRef(method);
-
-    // We need a static callback that matches LSPlant signature or a method on an object.
-    // LSPlant's Hook takes: (env, target_method, hooker_object, callback_method)
-    // Here we use the wrapper class as the hooker and entryPoint as the callback.
-
-    jobject backup = lsplant::Hook(env, target, nullptr, env->ToReflectedMethod(g_wrapper_class, g_entry_point_mid, JNI_FALSE));
+    jobject backup = lsplant::Hook(env, target, hooker, callback);
 
     if (backup) {
         jmethodID targetMID = env->FromReflectedMethod(method);
@@ -51,7 +31,7 @@ Java_com_devicespooflab_hooks_LSPlantJavaWrapper_nativeHook(JNIEnv* env, jclass 
 }
 
 extern "C" JNIEXPORT jobject JNICALL
-Java_com_devicespooflab_hooks_LSPlantJavaWrapper_callOriginal(JNIEnv* env, jclass /*clazz*/, jobject method, jobject thisObject, jobjectArray args) {
+Java_com_devicespooflab_hooks_LSPlantJavaWrapper_callOriginal(JNIEnv* env, jclass /*clazz*/, jobject method, jobjectArray args) {
     jmethodID targetMID = env->FromReflectedMethod(method);
     jobject backup = nullptr;
 
@@ -68,9 +48,8 @@ Java_com_devicespooflab_hooks_LSPlantJavaWrapper_callOriginal(JNIEnv* env, jclas
         return nullptr;
     }
 
-    // Call the backup method using reflection (LSPlant returns a Method object)
     jclass methodClass = env->FindClass("java/lang/reflect/Method");
     jmethodID invokeMID = env->GetMethodID(methodClass, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
 
-    return env->CallObjectMethod(backup, invokeMID, thisObject, args);
+    return env->CallObjectMethod(backup, invokeMID, nullptr, args);
 }

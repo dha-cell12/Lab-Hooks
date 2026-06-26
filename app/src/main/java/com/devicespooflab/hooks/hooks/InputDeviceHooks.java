@@ -19,7 +19,7 @@ public class InputDeviceHooks {
             LSPlantJavaWrapper.findAndHookMethod(InputDevice.class, "getName",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String name = (String) param.getResult();
                             if (name != null && isEmulator(name)) {
                                 param.setResult("Touch");
@@ -27,14 +27,14 @@ public class InputDeviceHooks {
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook InputDevice.getName: " + t);
+            android.util.Log.i(TAG, "failed to hook InputDevice.getName: " + t);
         }
 
         try {
             LSPlantJavaWrapper.findAndHookMethod(InputDevice.class, "getDescriptor",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String desc = (String) param.getResult();
                             if (desc != null && isEmulator(desc)) {
                                 param.setResult("0");

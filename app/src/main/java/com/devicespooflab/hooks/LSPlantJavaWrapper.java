@@ -1,7 +1,9 @@
 package com.devicespooflab.hooks;
 
 import android.util.Log;
+import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +13,25 @@ import java.util.Map;
 public class LSPlantJavaWrapper {
     private static final String TAG = "DeviceSpoofLab-LSPlant";
     private static final Map<Member, List<ZygiskMethodHook>> hookMap = new HashMap<>();
+    private static Method callbackMethod;
+
+    static {
+        try {
+            callbackMethod = Hooker.class.getDeclaredMethod("callback", Object[].class);
+        } catch (NoSuchMethodException e) {
+            Log.e(TAG, "Failed to find Hooker.callback", e);
+        }
+    }
+
+    public static class Hooker {
+        private final Member target;
+        public Hooker(Member target) { this.target = target; }
+
+        // LSPlant-compatible callback signature
+        public Object callback(Object[] args) throws Throwable {
+            return entryPoint(target, this, args);
+        }
+    }
 
     public static void findAndHookMethod(Class<?> clazz, String methodName, Object... parameterTypesAndCallback) {
         if (parameterTypesAndCallback.length == 0) return;
@@ -28,11 +49,10 @@ public class LSPlantJavaWrapper {
             hookMethod(m, callback);
         } catch (NoSuchMethodException e) {
             try {
-                // Try to find in the whole hierarchy if getDeclaredMethod fails
                 Method m = clazz.getMethod(methodName, parameterTypes);
                 hookMethod(m, callback);
             } catch (NoSuchMethodException e2) {
-                Log.e(TAG, "Method not found: " + methodName + " in " + clazz.getName(), e);
+                Log.e(TAG, "Method not found: " + methodName + " in " + clazz.getName());
             }
         }
     }
@@ -52,7 +72,7 @@ public class LSPlantJavaWrapper {
             java.lang.reflect.Constructor<?> c = clazz.getDeclaredConstructor(parameterTypes);
             hookMethod(c, callback);
         } catch (NoSuchMethodException e) {
-            Log.e(TAG, "Constructor not found in " + clazz.getName(), e);
+            Log.e(TAG, "Constructor not found in " + clazz.getName());
         }
     }
 
@@ -64,7 +84,8 @@ public class LSPlantJavaWrapper {
                 hooks = new ArrayList<>();
                 hookMap.put(method, hooks);
                 try {
-                    nativeHook(method);
+                    Hooker hooker = new Hooker(method);
+                    nativeHook(method, hooker, callbackMethod);
                 } catch (UnsatisfiedLinkError e) {
                     Log.e(TAG, "Native hook failed", e);
                 }
@@ -73,19 +94,27 @@ public class LSPlantJavaWrapper {
         }
     }
 
-    // Called from Native
-    public static Object entryPoint(Member method, Object thisObject, Object[] args) throws Throwable {
+    public static Object entryPoint(Member method, Hooker hooker, Object[] args) throws Throwable {
         ZygiskMethodHook.MethodHookParam param = new ZygiskMethodHook.MethodHookParam();
         param.method = method;
-        param.thisObject = thisObject;
-        param.args = args;
+        // In LSPlant Object[] args, if it's an instance method, args[0] is the 'this' object
+        boolean isStatic = Modifier.isStatic(method.getModifiers());
+        if (!isStatic && args != null && args.length > 0) {
+            param.thisObject = args[0];
+            // Shift args to match Xposed behavior where param.args only contains method arguments
+            Object[] shiftedArgs = new Object[args.length - 1];
+            System.arraycopy(args, 1, shiftedArgs, 0, args.length - 1);
+            param.args = shiftedArgs;
+        } else {
+            param.thisObject = null;
+            param.args = args;
+        }
 
         List<ZygiskMethodHook> hooks;
         synchronized (hookMap) {
             hooks = new ArrayList<>(hookMap.get(method));
         }
 
-        // Before hooks
         for (ZygiskMethodHook hook : hooks) {
             try {
                 hook.beforeHookedMethod(param);
@@ -95,12 +124,20 @@ public class LSPlantJavaWrapper {
             if (param.resultSet) return param.getResult();
         }
 
-        // Call original
-        Object result = callOriginal(method, thisObject, args);
-        param.setResult(result);
-        param.resultSet = false; // Reset for after hooks
+        // Reconstruct args for original call if shifted
+        Object[] callArgs;
+        if (!isStatic && args != null && args.length > 0) {
+            callArgs = new Object[param.args.length + 1];
+            callArgs[0] = param.thisObject;
+            System.arraycopy(param.args, 0, callArgs, 1, param.args.length);
+        } else {
+            callArgs = param.args;
+        }
 
-        // After hooks
+        Object result = callOriginal(method, callArgs);
+        param.setResult(result);
+        param.resultSet = false;
+
         for (ZygiskMethodHook hook : hooks) {
             try {
                 hook.afterHookedMethod(param);
@@ -112,6 +149,128 @@ public class LSPlantJavaWrapper {
         return param.getResult();
     }
 
-    private static native void nativeHook(Member method);
-    private static native Object callOriginal(Member method, Object thisObject, Object[] args) throws Throwable;
+    private static native void nativeHook(Member method, Hooker hooker, Method callback);
+    private static native Object callOriginal(Member method, Object[] args) throws Throwable;
+
+    // Reflection Helpers
+    public static void setObjectField(Object obj, String name, Object val) {
+        try {
+            Field f = findFieldInHierarchy(obj.getClass(), name);
+            f.setAccessible(true);
+            f.set(obj, val);
+        } catch (Exception e) {}
+    }
+    public static void setStaticObjectField(Class<?> cls, String name, Object val) {
+        try {
+            Field f = findFieldInHierarchy(cls, name);
+            f.setAccessible(true);
+            f.set(null, val);
+        } catch (Exception e) {}
+    }
+    public static void setIntField(Object obj, String name, int val) {
+        try {
+            Field f = findFieldInHierarchy(obj.getClass(), name);
+            f.setAccessible(true);
+            f.setInt(obj, val);
+        } catch (Exception e) {}
+    }
+    public static void setStaticIntField(Class<?> cls, String name, int val) {
+        try {
+            Field f = findFieldInHierarchy(cls, name);
+            f.setAccessible(true);
+            f.setInt(null, val);
+        } catch (Exception e) {}
+    }
+    public static void setBooleanField(Object obj, String name, boolean val) {
+        try {
+            Field f = findFieldInHierarchy(obj.getClass(), name);
+            f.setAccessible(true);
+            f.setBoolean(obj, val);
+        } catch (Exception e) {}
+    }
+    public static void setStaticBooleanField(Class<?> cls, String name, boolean val) {
+        try {
+            Field f = findFieldInHierarchy(cls, name);
+            f.setAccessible(true);
+            f.setBoolean(null, val);
+        } catch (Exception e) {}
+    }
+    public static void setLongField(Object obj, String name, long val) {
+        try {
+            Field f = findFieldInHierarchy(obj.getClass(), name);
+            f.setAccessible(true);
+            f.setLong(obj, val);
+        } catch (Exception e) {}
+    }
+    public static void setStaticLongField(Class<?> cls, String name, long val) {
+        try {
+            Field f = findFieldInHierarchy(cls, name);
+            f.setAccessible(true);
+            f.setLong(null, val);
+        } catch (Exception e) {}
+    }
+    public static Object callMethod(Object obj, String name, Object... args) {
+        try {
+            Class<?>[] types = new Class[args.length];
+            for(int i=0; i<args.length; i++) {
+                if (args[i] == null) types[i] = Object.class;
+                else types[i] = args[i].getClass();
+            }
+            Method m = findMethodInHierarchy(obj.getClass(), name, types);
+            m.setAccessible(true);
+            return m.invoke(obj, args);
+        } catch (Exception e) { return null; }
+    }
+    public static Object callStaticMethod(Class<?> cls, String name, Object... args) {
+        try {
+            Class<?>[] types = new Class[args.length];
+            for(int i=0; i<args.length; i++) {
+                if (args[i] == null) types[i] = Object.class;
+                else types[i] = args[i].getClass();
+            }
+            Method m = findMethodInHierarchy(cls, name, types);
+            m.setAccessible(true);
+            return m.invoke(null, args);
+        } catch (Exception e) { return null; }
+    }
+
+    private static Field findFieldInHierarchy(Class<?> cls, String name) throws NoSuchFieldException {
+        Class<?> curr = cls;
+        while (curr != null) {
+            try {
+                return curr.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+                curr = curr.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(name);
+    }
+
+    private static Method findMethodInHierarchy(Class<?> cls, String name, Class<?>[] types) throws NoSuchMethodException {
+        Class<?> curr = cls;
+        while (curr != null) {
+            try {
+                return curr.getDeclaredMethod(name, types);
+            } catch (NoSuchMethodException e) {
+                curr = curr.getSuperclass();
+            }
+        }
+        throw new NoSuchMethodException(name);
+    }
+
+    public static Object getObjectField(Object obj, String name) {
+        try {
+            Field f = findFieldInHierarchy(obj.getClass(), name);
+            f.setAccessible(true);
+            return f.get(obj);
+        } catch (Exception e) { return null; }
+    }
+
+    public static Object getStaticObjectField(Class<?> cls, String name) {
+        try {
+            Field f = findFieldInHierarchy(cls, name);
+            f.setAccessible(true);
+            return f.get(null);
+        } catch (Exception e) { return null; }
+    }
 }

@@ -25,16 +25,16 @@ public class SettingsHooks {
     private static final String DEVICE_NAME = "device_name";
 
     public static void hook(ClassLoader classLoader, String processName) {
-        hookClass(lpparam, "android.provider.Settings$Secure",
+        hookClass(classLoader, processName, "android.provider.Settings$Secure",
                 SPOOF_ANDROID_ID | SPOOF_GSF_ID | SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
-        hookClass(lpparam, "android.provider.Settings$System",
+        hookClass(classLoader, processName, "android.provider.Settings$System",
                 SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
-        hookClass(lpparam, "android.provider.Settings$Global",
+        hookClass(classLoader, processName, "android.provider.Settings$Global",
                 SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
 
 }
 
-    private static void hookClass(XC_LoadPackage.LoadPackageParam lpparam,
+    private static void hookClass(ClassLoader classLoader, String processName,
                                   String className,
                                   int spoofFlags) {
         Class<?> clazz = com.devicespooflab.hooks.ZygiskEntry.findClass(className, classLoader);
@@ -45,7 +45,7 @@ public class SettingsHooks {
                     ContentResolver.class, String.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
+                        public void beforeHookedMethod(MethodHookParam param) {
                             String name = (String) param.args[1];
                             applySpoof(param, name, spoofFlags);
                         }
@@ -58,7 +58,7 @@ public class SettingsHooks {
                     ContentResolver.class, String.class, String.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
+                        public void beforeHookedMethod(MethodHookParam param) {
                             String name = (String) param.args[1];
                             applySpoof(param, name, spoofFlags);
                         }
@@ -71,7 +71,7 @@ public class SettingsHooks {
                     ContentResolver.class, String.class, int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
+                        public void beforeHookedMethod(MethodHookParam param) {
                             String name = (String) param.args[1];
                             applySpoof(param, name, spoofFlags);
                         }
@@ -80,7 +80,7 @@ public class SettingsHooks {
         }
     }
 
-    private static void applySpoof(XC_MethodHook.MethodHookParam param, String name, int spoofFlags) {
+    private static void applySpoof(ZygiskMethodHook.MethodHookParam param, String name, int spoofFlags) {
         if (name == null) return;
 
         if ((spoofFlags & SPOOF_ANDROID_ID) != 0 && ANDROID_ID.equals(name)) {

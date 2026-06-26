@@ -29,13 +29,13 @@ public class HardwareHooks {
     public static void hook(ClassLoader classLoader, String processName) {
         try {
             hookRuntimeCores();
-            hookActivityManagerMemory(lpparam);
+            hookActivityManagerMemory(classLoader, processName);
             hookDebugMemory();
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                android.util.Log.i(TAG + ": Successfully hooked hardware specs");
+                android.util.Log.i(TAG, "Successfully hooked hardware specs");
             }
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook hardware: " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook hardware: " + e.getMessage());
         }
     }
 
@@ -47,17 +47,17 @@ public class HardwareHooks {
             LSPlantJavaWrapper.findAndHookMethod(Runtime.class, "availableProcessors",
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         param.setResult(ConfigManager.getCpuCoreCount());
                     }
                 });
         } catch (Exception e) {
             RUNTIME_CORES_HOOKED.set(false);
-            android.util.Log.i(TAG + ": Failed to hook Runtime.availableProcessors(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Runtime.availableProcessors(): " + e.getMessage());
         }
     }
 
-    private static void hookActivityManagerMemory(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookActivityManagerMemory(ClassLoader classLoader, String processName) {
         try {
             Class<?> activityManagerClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.app.ActivityManager", classLoader);
@@ -73,7 +73,7 @@ public class HardwareHooks {
                 ActivityManager.MemoryInfo.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         ActivityManager.MemoryInfo memInfo = (ActivityManager.MemoryInfo) param.args[0];
                         if (memInfo != null) {
                             long originalTotal = memInfo.totalMem;
@@ -96,7 +96,7 @@ public class HardwareHooks {
             LSPlantJavaWrapper.findAndHookMethod(activityManagerClass, "getMemoryClass",
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         param.setResult(ConfigManager.getMemoryClassMb());
                     }
                 });
@@ -104,13 +104,13 @@ public class HardwareHooks {
             LSPlantJavaWrapper.findAndHookMethod(activityManagerClass, "getLargeMemoryClass",
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         param.setResult(ConfigManager.getLargeMemoryClassMb());
                     }
                 });
 
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook ActivityManager memory: " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook ActivityManager memory: " + e.getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ public class HardwareHooks {
             LSPlantJavaWrapper.findAndHookMethod(Debug.class, "getNativeHeapSize",
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         long originalSize = (Long) param.getResult();
                         param.setResult(originalSize * Math.max(1, ConfigManager.getNativeHeapScale()));
                     }

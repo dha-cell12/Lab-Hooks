@@ -26,13 +26,13 @@ public class SensorHooks {
                     new ZygiskMethodHook() {
                         @Override
                         @SuppressWarnings("unchecked")
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             List<Sensor> orig = (List<Sensor>) param.getResult();
                             param.setResult(filter(orig));
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook getSensorList: " + t);
+            android.util.Log.i(TAG, "failed to hook getSensorList: " + t);
         }
 
         try {
@@ -40,7 +40,7 @@ public class SensorHooks {
                     int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Sensor s = (Sensor) param.getResult();
                             if (s != null && isEmulatorSensor(s)) {
                                 param.setResult(null);
@@ -48,7 +48,7 @@ public class SensorHooks {
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook getDefaultSensor: " + t);
+            android.util.Log.i(TAG, "failed to hook getDefaultSensor: " + t);
         }
 
         try {
@@ -56,7 +56,7 @@ public class SensorHooks {
                     int.class, boolean.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Sensor s = (Sensor) param.getResult();
                             if (s != null && isEmulatorSensor(s)) {
                                 param.setResult(null);

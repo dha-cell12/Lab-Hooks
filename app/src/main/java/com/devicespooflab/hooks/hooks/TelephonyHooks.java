@@ -25,7 +25,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getDeviceId",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getIMEI();
                             if (v != null) param.setResult(v);
                         }
@@ -37,7 +37,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getDeviceId", int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getIMEI();
                             if (v != null) param.setResult(v);
                         }
@@ -49,7 +49,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getImei",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getIMEI();
                             if (v != null) param.setResult(v);
                         }
@@ -61,7 +61,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getImei", int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getIMEI();
                             if (v != null) param.setResult(v);
                         }
@@ -73,7 +73,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getMeid",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getMEID();
                             if (v != null) param.setResult(v);
                         }
@@ -85,7 +85,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getMeid", int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getMEID();
                             if (v != null) param.setResult(v);
                         }
@@ -97,7 +97,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSubscriberId",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getIMSI();
                             if (v != null) param.setResult(v);
                         }
@@ -109,7 +109,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSubscriberId", int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getIMSI();
                             if (v != null) param.setResult(v);
                         }
@@ -121,7 +121,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSimSerialNumber",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getICCID();
                             if (v != null) param.setResult(v);
                         }
@@ -133,7 +133,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSimSerialNumber", int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getICCID();
                             if (v != null) param.setResult(v);
                         }
@@ -145,7 +145,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getLine1Number",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getPhoneNumber();
                             if (v != null) param.setResult(v);
                         }
@@ -157,7 +157,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getLine1Number", int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getPhoneNumber();
                             if (v != null) param.setResult(v);
                         }
@@ -170,7 +170,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getNetworkOperator",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String mccMnc = ConfigManager.getSystemProperty("gsm.operator.numeric", null);
                             if (mccMnc != null) {
                                 param.setResult(mccMnc);
@@ -184,7 +184,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getNetworkOperatorName",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String operatorName = ConfigManager.getSystemProperty("gsm.operator.alpha", null);
                             if (operatorName != null) {
                                 param.setResult(operatorName);
@@ -198,7 +198,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSimOperator",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String simMccMnc = ConfigManager.getSystemProperty("gsm.sim.operator.numeric", null);
                             if (simMccMnc != null) {
                                 param.setResult(simMccMnc);
@@ -212,7 +212,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSimOperatorName",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String simOperatorName = ConfigManager.getSystemProperty("gsm.sim.operator.alpha", null);
                             if (simOperatorName != null) {
                                 param.setResult(simOperatorName);
@@ -226,7 +226,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getSimCountryIso",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String simCountry = ConfigManager.getSystemProperty("gsm.sim.operator.iso-country", null);
                             if (simCountry != null) {
                                 param.setResult(simCountry);
@@ -240,7 +240,7 @@ public class TelephonyHooks {
             LSPlantJavaWrapper.findAndHookMethod(telephonyManager, "getNetworkCountryIso",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String networkCountry = ConfigManager.getSystemProperty("gsm.operator.iso-country", null);
                             if (networkCountry != null) {
                                 param.setResult(networkCountry);
@@ -257,7 +257,7 @@ public class TelephonyHooks {
         if (subscriptionManager != null) {
             ZygiskMethodHook phoneNumberHook = new ZygiskMethodHook() {
                 @Override
-                protected void afterHookedMethod(MethodHookParam param) {
+                public void afterHookedMethod(MethodHookParam param) {
                     String v = ConfigManager.getPhoneNumber();
                     if (v != null) param.setResult(v);
                 }

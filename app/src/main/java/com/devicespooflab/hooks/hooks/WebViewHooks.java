@@ -32,17 +32,17 @@ public class WebViewHooks {
 
     public static void hook(ClassLoader classLoader, String processName) {
         try {
-            hookWebSettings(lpparam);
-            hookWebViewConstructor(lpparam);
-            hookSetWebViewClient(lpparam);
-            hookGetWebViewClient(lpparam);
-            hookLoadUrl(lpparam);
+            hookWebSettings(classLoader, processName);
+            hookWebViewConstructor(classLoader, processName);
+            hookSetWebViewClient(classLoader, processName);
+            hookGetWebViewClient(classLoader, processName);
+            hookLoadUrl(classLoader, processName);
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": init failed: " + t);
+            android.util.Log.i(TAG, "init failed: " + t);
         }
     }
 
-    private static void hookWebSettings(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWebSettings(ClassLoader classLoader, String processName) {
         Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
@@ -51,36 +51,36 @@ public class WebViewHooks {
             LSPlantJavaWrapper.findAndHookMethod(webViewClass, "getSettings",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Object settings = param.getResult();
                             if (settings == null) return;
                             String ua = ConfigManager.getWebViewUserAgent();
                             if (ua != null) {
                                 try {
-                                    XposedHelpers.callMethod(settings, "setUserAgentString", ua);
+                                    LSPlantJavaWrapper.callMethod(settings, "setUserAgentString", ua);
                                 } catch (Throwable ignored) {}
                             }
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook WebView.getSettings: " + t);
+            android.util.Log.i(TAG, "failed to hook WebView.getSettings: " + t);
         }
     }
 
-    private static void hookWebViewConstructor(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWebViewConstructor(ClassLoader classLoader, String processName) {
         Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
         ZygiskMethodHook setUaHook = new ZygiskMethodHook() {
             @Override
-            protected void afterHookedMethod(MethodHookParam param) {
+            public void afterHookedMethod(MethodHookParam param) {
                 try {
                     Object webView = param.thisObject;
-                    Object settings = XposedHelpers.callMethod(webView, "getSettings");
+                    Object settings = LSPlantJavaWrapper.callMethod(webView, "getSettings");
                     String ua = ConfigManager.getWebViewUserAgent();
                     if (ua != null) {
-                        XposedHelpers.callMethod(settings, "setUserAgentString", ua);
+                        LSPlantJavaWrapper.callMethod(settings, "setUserAgentString", ua);
                     }
                     if (webView instanceof WebView) {
                         ((WebView) webView).setWebViewClient(new SpoofingWebViewClient(null));
@@ -105,7 +105,7 @@ public class WebViewHooks {
         } catch (Throwable t) { logFail("WebView(Context,AttributeSet,int)", t); }
     }
 
-    private static void hookSetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookSetWebViewClient(ClassLoader classLoader, String processName) {
         Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
@@ -115,7 +115,7 @@ public class WebViewHooks {
                     WebViewClient.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
+                        public void beforeHookedMethod(MethodHookParam param) {
                             WebViewClient orig = (WebViewClient) param.args[0];
                             if (orig instanceof SpoofingWebViewClient) return;
                             param.args[0] = new SpoofingWebViewClient(orig);
@@ -124,7 +124,7 @@ public class WebViewHooks {
         } catch (Throwable t) { logFail("WebView.setWebViewClient", t); }
     }
 
-    private static void hookGetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookGetWebViewClient(ClassLoader classLoader, String processName) {
         Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
@@ -133,7 +133,7 @@ public class WebViewHooks {
             LSPlantJavaWrapper.findAndHookMethod(webViewClass, "getWebViewClient",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Object res = param.getResult();
                             if (res instanceof SpoofingWebViewClient) {
                                 WebViewClient delegate = ((SpoofingWebViewClient) res).delegate;
@@ -146,14 +146,14 @@ public class WebViewHooks {
         }
     }
 
-    private static void hookLoadUrl(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookLoadUrl(ClassLoader classLoader, String processName) {
         Class<?> webViewClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
         ZygiskMethodHook injectHook = new ZygiskMethodHook() {
             @Override
-            protected void afterHookedMethod(MethodHookParam param) {
+            public void afterHookedMethod(MethodHookParam param) {
                 injectAsync(param.thisObject);
             }
         };
@@ -191,7 +191,7 @@ public class WebViewHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        android.util.Log.i(TAG + ": failed to hook " + what + ": " + t);
+        android.util.Log.i(TAG, "failed to hook " + what + ": " + t);
     }
 
     // Forwards every WebViewClient callback to the original (or the platform

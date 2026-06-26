@@ -24,10 +24,10 @@ public class DisplayHooks {
         try {
             hookDisplayMethods();
             hookResourcesGetDisplayMetrics();
-            hookWindowMetrics(lpparam);
+            hookWindowMetrics(classLoader, processName);
             hookRefreshRate();
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": init failed: " + t);
+            android.util.Log.i(TAG, "init failed: " + t);
         }
     }
 
@@ -37,7 +37,7 @@ public class DisplayHooks {
                     DisplayMetrics.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             DisplayMetrics dm = (DisplayMetrics) param.args[0];
                             applySpoofedMetrics(dm);
                         }
@@ -49,7 +49,7 @@ public class DisplayHooks {
                     DisplayMetrics.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             DisplayMetrics dm = (DisplayMetrics) param.args[0];
                             applySpoofedMetrics(dm);
                         }
@@ -61,7 +61,7 @@ public class DisplayHooks {
                     Point.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Point p = (Point) param.args[0];
                             if (p != null) {
                                 p.x = ConfigManager.getScreenWidth();
@@ -76,7 +76,7 @@ public class DisplayHooks {
                     Point.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             Point p = (Point) param.args[0];
                             if (p != null) {
                                 p.x = ConfigManager.getScreenWidth();
@@ -90,7 +90,7 @@ public class DisplayHooks {
             LSPlantJavaWrapper.findAndHookMethod(Display.class, "getWidth",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getScreenWidth());
                         }
                     });
@@ -100,7 +100,7 @@ public class DisplayHooks {
             LSPlantJavaWrapper.findAndHookMethod(Display.class, "getHeight",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(ConfigManager.getScreenHeight());
                         }
                     });
@@ -113,7 +113,7 @@ public class DisplayHooks {
                     "getDisplayMetrics",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             DisplayMetrics dm = (DisplayMetrics) param.getResult();
                             applySpoofedMetrics(dm);
                         }
@@ -126,14 +126,14 @@ public class DisplayHooks {
             LSPlantJavaWrapper.findAndHookMethod(Display.class, "getRefreshRate",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(REFRESH_RATE_HZ);
                         }
                     });
         } catch (Throwable t) { logFail("Display.getRefreshRate", t); }
     }
 
-    private static void hookWindowMetrics(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWindowMetrics(ClassLoader classLoader, String processName) {
         // Android 11+: WindowMetrics.getBounds() returns a Rect with the display
         // bounds. Apps using this code path bypass the legacy Display getters.
         Class<?> wmClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
@@ -144,7 +144,7 @@ public class DisplayHooks {
             LSPlantJavaWrapper.findAndHookMethod(wmClass, "getBounds",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new Rect(0, 0,
                                     ConfigManager.getScreenWidth(),
                                     ConfigManager.getScreenHeight()));
@@ -174,7 +174,7 @@ public class DisplayHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        android.util.Log.i(TAG + ": failed to hook " + what + ": " + t);
+        android.util.Log.i(TAG, "failed to hook " + what + ": " + t);
     }
 
 

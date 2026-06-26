@@ -30,12 +30,12 @@ public class AccountHooks {
             LSPlantJavaWrapper.findAndHookMethod(am, "getAccounts",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new Account[0]);
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook getAccounts: " + t);
+            android.util.Log.i(TAG, "failed to hook getAccounts: " + t);
         }
 
         try {
@@ -43,7 +43,7 @@ public class AccountHooks {
                     int.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new Account[0]);
                         }
                     });

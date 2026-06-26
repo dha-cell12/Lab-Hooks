@@ -9,6 +9,7 @@
 namespace ds {
 
 void InstallJavaHooks(JNIEnv* env) {
+    // Basic JNI-based spoofing for static fields (most efficient for these)
     jclass buildClass = env->FindClass("android/os/Build");
     if (buildClass) {
         std::string model;
@@ -20,7 +21,8 @@ void InstallJavaHooks(JNIEnv* env) {
         }
     }
 
-    // Logic moved to zygisk_main.cpp to handle processName parameter correctly
+    // Note: Complex method hooking is now handled on the Java side
+    // via ZygiskEntry.init() and LSPlantJavaWrapper.
 }
 
 } // namespace ds

@@ -21,7 +21,7 @@ public class CameraHooks {
             LSPlantJavaWrapper.findAndHookMethod(cm, "getCameraIdList",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String[] ids = (String[]) param.getResult();
                             if (ids == null) return;
                             int kept = 0;
@@ -38,7 +38,7 @@ public class CameraHooks {
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook getCameraIdList: " + t);
+            android.util.Log.i(TAG, "failed to hook getCameraIdList: " + t);
         }
     }
 

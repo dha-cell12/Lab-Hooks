@@ -34,7 +34,7 @@ public class SystemPropertiesHooks {
             } catch (Exception ignored) {
             }
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook SystemProperties: " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook SystemProperties: " + e.getMessage());
         }
     }
 
@@ -54,7 +54,7 @@ public class SystemPropertiesHooks {
                 String.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
                         String originalValue = (String) param.getResult();
                         String spoofedValue = ConfigManager.getSystemProperty(key, null);
@@ -65,7 +65,7 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook get(String): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook get(String): " + e.getMessage());
         }
 
         // Hook get(String key, String def)
@@ -74,7 +74,7 @@ public class SystemPropertiesHooks {
                 String.class, String.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
                         String defaultValue = (String) param.args[1];
                         String spoofedValue = ConfigManager.getSystemProperty(key, null);
@@ -85,7 +85,7 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook get(String, String): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook get(String, String): " + e.getMessage());
         }
 
         // Hook getInt(String key, int def)
@@ -94,7 +94,7 @@ public class SystemPropertiesHooks {
                 String.class, int.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
                         String spoofedValue = ConfigManager.getSystemProperty(key, null);
 
@@ -109,7 +109,7 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook getInt(String, int): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getInt(String, int): " + e.getMessage());
         }
 
         // Hook getBoolean(String key, boolean def)
@@ -118,7 +118,7 @@ public class SystemPropertiesHooks {
                 String.class, boolean.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
                         String spoofedValue = ConfigManager.getSystemProperty(key, null);
 
@@ -131,7 +131,7 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook getBoolean(String, boolean): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getBoolean(String, boolean): " + e.getMessage());
         }
 
         // Hook getLong(String key, long def)
@@ -140,7 +140,7 @@ public class SystemPropertiesHooks {
                 String.class, long.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
                         String spoofedValue = ConfigManager.getSystemProperty(key, null);
 
@@ -155,7 +155,7 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook getLong(String, long): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getLong(String, long): " + e.getMessage());
         }
     }
 

@@ -21,7 +21,7 @@ public class BuildHooks {
         try {
             Class<?> buildClass = findBuildClass(classLoader);
             if (buildClass == null) {
-                android.util.Log.i(TAG + ": Build class not found");
+                android.util.Log.i(TAG, "Build class not found");
                 return;
 
 }
@@ -35,11 +35,11 @@ public class BuildHooks {
             spoofVersionFields(classLoader);
 
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                android.util.Log.i(TAG + ": Successfully spoofed Build static fields and methods");
+                android.util.Log.i(TAG, "Successfully spoofed Build static fields and methods");
             }
 
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook Build methods: " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Build methods: " + e.getMessage());
         }
     }
 
@@ -47,7 +47,7 @@ public class BuildHooks {
         try {
             Class<?> buildClass = findBuildClass(classLoader);
             if (buildClass == null) {
-                android.util.Log.i(TAG + ": Build class not found during refresh");
+                android.util.Log.i(TAG, "Build class not found during refresh");
                 return;
             }
 
@@ -55,10 +55,10 @@ public class BuildHooks {
             spoofVersionFields(classLoader);
 
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                android.util.Log.i(TAG + ": Refreshed Build static fields");
+                android.util.Log.i(TAG, "Refreshed Build static fields");
             }
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to refresh Build static fields: " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to refresh Build static fields: " + t.getMessage());
         }
     }
 
@@ -154,7 +154,7 @@ public class BuildHooks {
             LSPlantJavaWrapper.findAndHookMethod(buildClass, "getSerial",
                 new ZygiskMethodHook() {
                     @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                         String v = ConfigManager.getSerial();
                         if (v != null) param.setResult(v);
                     }
@@ -162,7 +162,7 @@ public class BuildHooks {
         } catch (NoSuchMethodError e) {
             // Method doesn't exist on Android < 8
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook getSerial(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getSerial(): " + e.getMessage());
         }
     }
 
@@ -171,13 +171,13 @@ public class BuildHooks {
             LSPlantJavaWrapper.findAndHookMethod(buildClass, "getRadioVersion",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             param.setResult(getRadioVersion());
                         }
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook getRadioVersion(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getRadioVersion(): " + e.getMessage());
         }
     }
 
@@ -187,7 +187,7 @@ public class BuildHooks {
                     String.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             String key = (String) param.args[0];
                             String spoofedValue = ConfigManager.getSystemProperty(key, null);
                             if (spoofedValue != null) {
@@ -197,7 +197,7 @@ public class BuildHooks {
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook Build.getString(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Build.getString(): " + e.getMessage());
         }
     }
 
@@ -207,7 +207,7 @@ public class BuildHooks {
                     String.class, long.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        public void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             String key = (String) param.args[0];
                             String spoofedValue = ConfigManager.getSystemProperty(key, null);
                             if (spoofedValue == null) {
@@ -222,7 +222,7 @@ public class BuildHooks {
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook Build.getLong(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Build.getLong(): " + e.getMessage());
         }
     }
 
@@ -239,7 +239,7 @@ public class BuildHooks {
             LSPlantJavaWrapper.findAndHookMethod(partitionClass, "getFingerprint",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        public void afterHookedMethod(MethodHookParam param) throws Throwable {
                             String partitionName = getPartitionName(param.thisObject);
                             String spoofedValue = getPartitionFingerprint(partitionName);
                             if (spoofedValue != null) {
@@ -249,26 +249,26 @@ public class BuildHooks {
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook Partition.getFingerprint(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Partition.getFingerprint(): " + e.getMessage());
         }
 
         try {
             LSPlantJavaWrapper.findAndHookMethod(partitionClass, "getBuildTimeMillis",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        public void afterHookedMethod(MethodHookParam param) throws Throwable {
                             param.setResult(getBuildTimeMillis());
                         }
                     });
         } catch (NoSuchMethodError ignored) {
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook Partition.getBuildTimeMillis(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook Partition.getBuildTimeMillis(): " + e.getMessage());
         }
     }
 
     private static String getPartitionName(Object partition) {
         try {
-            Object name = XposedHelpers.callMethod(partition, "getName");
+            Object name = LSPlantJavaWrapper.callMethod(partition, "getName");
             return name instanceof String ? (String) name : null;
         } catch (Throwable ignored) {
             return null;
@@ -290,10 +290,10 @@ public class BuildHooks {
         }
 
         try {
-            XposedHelpers.setStaticObjectField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticObjectField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
@@ -303,37 +303,37 @@ public class BuildHooks {
         }
 
         try {
-            XposedHelpers.setStaticObjectField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticObjectField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
     private static void setIntField(Class<?> clazz, String fieldName, int value) {
         try {
-            XposedHelpers.setStaticIntField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticIntField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
     private static void setBooleanField(Class<?> clazz, String fieldName, boolean value) {
         try {
-            XposedHelpers.setStaticBooleanField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticBooleanField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
     private static void setLongField(Class<?> clazz, String fieldName, long value) {
         try {
-            XposedHelpers.setStaticLongField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticLongField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 
@@ -343,10 +343,10 @@ public class BuildHooks {
         }
 
         try {
-            XposedHelpers.setStaticObjectField(clazz, fieldName, value);
+            LSPlantJavaWrapper.setStaticObjectField(clazz, fieldName, value);
         } catch (NoSuchFieldError ignored) {
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
+            android.util.Log.i(TAG, "Failed to set " + clazz.getName() + "." + fieldName + ": " + t.getMessage());
         }
     }
 

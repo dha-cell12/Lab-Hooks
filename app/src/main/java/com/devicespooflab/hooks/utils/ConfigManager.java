@@ -72,10 +72,7 @@ public class ConfigManager {
         allProperties = Collections.unmodifiableMap(new HashMap<>(loaded));
     }
 
-    private static Map<String, String> readXSharedPreferences() {
-        // XSharedPreferences is no longer used in Zygisk mode.
-        return null;
-    }
+    private static Map<String, String> readXSharedPreferences() { return null; }
 
     public static Map<String, String> getRawProperties() {
         Map<String, String> props = allProperties;
@@ -92,15 +89,9 @@ public class ConfigManager {
                 || processName.startsWith("com.devicespooflab.hooks:");
     }
 
-    public static synchronized boolean loadFromRemotePreferences() {
-        // RemotePreferences is no longer used in Zygisk mode.
-        return false;
-    }
+    public static synchronized boolean loadFromRemotePreferences() { return false; }
 
-    public static synchronized boolean publishToRemotePreferences() {
-        // RemotePreferences is no longer used in Zygisk mode.
-        return false;
-    }
+    public static synchronized boolean publishToRemotePreferences() { return false; }
 
     // Cross-process freshness marker stamped on each publish; target processes
     // compare it against their in-memory copy to detect new edits.
@@ -112,35 +103,7 @@ public class ConfigManager {
         return props.get(REMOTE_GENERATION_KEY);
     }
 
-    public static boolean refreshFromRemoteIfNewer(ClassLoader loader) {
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferencesFresh("config");
-        if (prefs == null) return false;
-        String remoteGen;
-        try {
-            remoteGen = prefs.getString(REMOTE_GENERATION_KEY, null);
-        } catch (Throwable t) {
-            return false;
-        }
-        if (remoteGen == null || remoteGen.isEmpty()) return false;
-        String localGen = getLocalRemoteGeneration();
-        if (remoteGen.equals(localGen)) return false;
-        boolean reloaded = loadFromRemotePreferences();
-        if (reloaded) {
-            if (loader != null) {
-                try {
-                    com.devicespooflab.hooks.hooks.BuildHooks.refreshStaticFields(loader);
-                } catch (Throwable t) {
-                    android.util.Log.w("DeviceSpoofLab",
-                            "BuildHooks.refreshStaticFields during refresh failed: "
-                                    + t.getMessage());
-                }
-            }
-            android.util.Log.i("DeviceSpoofLab",
-                    "Remote config refreshed: " + localGen + " -> " + remoteGen);
-        }
-        return reloaded;
-    }
+    public static boolean refreshFromRemoteIfNewer(ClassLoader loader) { return false; }
 
     private static void resetCaches() {
         cachedIMEI = null;

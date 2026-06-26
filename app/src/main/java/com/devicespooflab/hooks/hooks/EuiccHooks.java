@@ -16,11 +16,10 @@ public class EuiccHooks {
 
     private static final String TAG = "DeviceSpoofLab-Euicc";
 
-    public static void hook(ClassLoader classLoader, String processName) {
-        hook(lpparam, Build.VERSION.SDK_INT);
-    }
 
-    public static void hook(ClassLoader classLoader, int realDeviceSdk) {
+
+    public static void hook(ClassLoader classLoader, String processName) {
+        int realDeviceSdk = android.os.Build.VERSION.SDK_INT;
         if (realDeviceSdk < 28) return;
 
         Class<?> em = com.devicespooflab.hooks.ZygiskEntry.findClass(
@@ -31,13 +30,13 @@ public class EuiccHooks {
             LSPlantJavaWrapper.findAndHookMethod(em, "getEid",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getEid();
                             if (v != null) param.setResult(v);
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook EuiccManager.getEid: " + t);
+            android.util.Log.i(TAG, "failed to hook EuiccManager.getEid: " + t);
         }
     }
 

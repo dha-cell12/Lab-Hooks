@@ -33,7 +33,7 @@ public class LocaleHooks {
             LSPlantJavaWrapper.findAndHookMethod(TimeZone.class, "getDefault",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String tz = ConfigManager.getSystemProperty(
                                     "persist.sys.timezone", "America/Los_Angeles");
                             if (tz != null && !tz.isEmpty()) {
@@ -42,7 +42,7 @@ public class LocaleHooks {
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook TimeZone.getDefault: " + t);
+            android.util.Log.i(TAG, "failed to hook TimeZone.getDefault: " + t);
         }
     }
 
@@ -51,12 +51,12 @@ public class LocaleHooks {
             LSPlantJavaWrapper.findAndHookMethod(Locale.class, "getDefault",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(buildLocale());
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook Locale.getDefault: " + t);
+            android.util.Log.i(TAG, "failed to hook Locale.getDefault: " + t);
         }
 
         try {
@@ -64,7 +64,7 @@ public class LocaleHooks {
                     Locale.Category.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(buildLocale());
                         }
                     });
@@ -76,19 +76,19 @@ public class LocaleHooks {
             LSPlantJavaWrapper.findAndHookMethod(LocaleList.class, "getDefault",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new LocaleList(buildLocale()));
                         }
                     });
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": failed to hook LocaleList.getDefault: " + t);
+            android.util.Log.i(TAG, "failed to hook LocaleList.getDefault: " + t);
         }
 
         try {
             LSPlantJavaWrapper.findAndHookMethod(LocaleList.class, "getAdjustedDefault",
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new LocaleList(buildLocale()));
                         }
                     });

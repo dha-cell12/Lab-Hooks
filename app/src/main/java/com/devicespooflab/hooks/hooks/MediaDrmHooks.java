@@ -28,7 +28,7 @@ public class MediaDrmHooks {
                     String.class,
                     new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             String propertyName = (String) param.args[0];
 
                             if (DEVICE_UNIQUE_ID.equals(propertyName)) {

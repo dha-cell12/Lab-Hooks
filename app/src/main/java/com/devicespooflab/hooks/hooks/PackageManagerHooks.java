@@ -120,7 +120,7 @@ public class PackageManagerHooks {
                 hookGetSystemAvailableFeatures(appPackageManagerClass);
             }
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook PackageManager: " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook PackageManager: " + e.getMessage());
         }
     }
 
@@ -130,7 +130,7 @@ public class PackageManagerHooks {
                 String.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String feature = (String) param.args[0];
 
                         if (feature == null) {
@@ -150,7 +150,7 @@ public class PackageManagerHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook hasSystemFeature(String): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook hasSystemFeature(String): " + e.getMessage());
         }
 
         try {
@@ -158,7 +158,7 @@ public class PackageManagerHooks {
                 String.class, int.class,
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String feature = (String) param.args[0];
 
                         if (feature == null) {
@@ -178,7 +178,7 @@ public class PackageManagerHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook hasSystemFeature(String, int): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook hasSystemFeature(String, int): " + e.getMessage());
         }
     }
 
@@ -187,7 +187,7 @@ public class PackageManagerHooks {
             LSPlantJavaWrapper.findAndHookMethod(pmClass, "getSystemAvailableFeatures",
                 new ZygiskMethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    public void afterHookedMethod(MethodHookParam param) throws Throwable {
                         Object[] features = (Object[]) param.getResult();
                         if (features == null) {
                             return;
@@ -198,7 +198,7 @@ public class PackageManagerHooks {
                         List<Object> filtered = new ArrayList<>();
                         for (Object feature : features) {
                             try {
-                                String name = (String) XposedHelpers.getObjectField(feature, "name");
+                                String name = (String) LSPlantJavaWrapper.getObjectField(feature, "name");
                                 if (name != null) {
                                     boolean isDenied = false;
                                     for (String denied : DENIED_FEATURES) {
@@ -227,7 +227,7 @@ public class PackageManagerHooks {
                     }
                 });
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": Failed to hook getSystemAvailableFeatures(): " + e.getMessage());
+            android.util.Log.i(TAG, "Failed to hook getSystemAvailableFeatures(): " + e.getMessage());
         }
     }
 

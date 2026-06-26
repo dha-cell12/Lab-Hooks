@@ -33,33 +33,32 @@ public class AppSetIdHooks {
     private static final String IAPPSET_SERVICE_DESCRIPTOR =
             "com.google.android.gms.appset.internal.IAppSetService";
 
-    public static void hook(ClassLoader classLoader, String processName) {
-        hook(lpparam, Build.VERSION.SDK_INT);
-    }
 
-    public static void hook(ClassLoader classLoader, int realDeviceSdk) {
+
+    public static void hook(ClassLoader classLoader, String processName) {
+        int realDeviceSdk = android.os.Build.VERSION.SDK_INT;
         if (realDeviceSdk < MIN_SDK) {
             return;
         }
 
         try {
-            hookClientSide(lpparam);
+            hookClientSide(classLoader, processName);
         } catch (Exception e) {
-            android.util.Log.i(TAG + ": client hook failed: " + e.getMessage());
+            android.util.Log.i(TAG, "client hook failed: " + e.getMessage());
         }
 
-        if ("com.google.android.gms".equals("")) {
+        if ("com.google.android.gms".equals(processName)) {
             try {
                 hookGmsServerSide();
             } catch (Throwable t) {
-                android.util.Log.i(TAG + ": GMS hook failed: " + t.getMessage());
+                android.util.Log.i(TAG, "GMS hook failed: " + t.getMessage());
             }
         }
     }
 
     // ---- Client-side substitution ----
 
-    private static void hookClientSide(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookClientSide(ClassLoader classLoader, String processName) {
         Class<?> appSetIdInfoClass = com.devicespooflab.hooks.ZygiskEntry.findClass(
                 "com.google.android.gms.appset.AppSetIdInfo", classLoader);
         if (appSetIdInfoClass != null) {
@@ -67,7 +66,7 @@ public class AppSetIdHooks {
                 LSPlantJavaWrapper.findAndHookMethod(appSetIdInfoClass, "getId",
                         new ZygiskMethodHook() {
                             @Override
-                            protected void afterHookedMethod(MethodHookParam param) {
+                            public void afterHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getAppSetId();
                                 if (v != null) param.setResult(v);
                             }
@@ -79,7 +78,7 @@ public class AppSetIdHooks {
                 LSPlantJavaWrapper.findAndHookMethod(appSetIdInfoClass, "getScope",
                         new ZygiskMethodHook() {
                             @Override
-                            protected void afterHookedMethod(MethodHookParam param) {
+                            public void afterHookedMethod(MethodHookParam param) {
                                 param.setResult(1);
                             }
                         });
@@ -92,7 +91,7 @@ public class AppSetIdHooks {
                         String.class, int.class,
                         new ZygiskMethodHook() {
                             @Override
-                            protected void beforeHookedMethod(MethodHookParam param) {
+                            public void beforeHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getAppSetId();
                                 if (v != null) param.args[0] = v;
                                 param.args[1] = 1;
@@ -111,14 +110,14 @@ public class AppSetIdHooks {
                 LSPlantJavaWrapper.findAndHookMethod(appSetServiceStub, "getAppSetIdInfo",
                         new ZygiskMethodHook() {
                             @Override
-                            protected void afterHookedMethod(MethodHookParam param) {
+                            public void afterHookedMethod(MethodHookParam param) {
                                 Object info = param.getResult();
                                 if (info == null) return;
                                 String v = ConfigManager.getAppSetId();
                                 if (v == null) return;
                                 try {
-                                    XposedHelpers.setObjectField(info, "id", v);
-                                    XposedHelpers.setIntField(info, "scope", 1);
+                                    LSPlantJavaWrapper.setObjectField(info, "id", v);
+                                    LSPlantJavaWrapper.setIntField(info, "scope", 1);
                                 } catch (Throwable ignored) {
                                 }
                             }
@@ -137,7 +136,7 @@ public class AppSetIdHooks {
                 LSPlantJavaWrapper.findAndHookMethod(systemAppSetId, "getId",
                         new ZygiskMethodHook() {
                             @Override
-                            protected void afterHookedMethod(MethodHookParam param) {
+                            public void afterHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getAppSetId();
                                 if (v != null) param.setResult(v);
                             }
@@ -148,7 +147,7 @@ public class AppSetIdHooks {
                 LSPlantJavaWrapper.findAndHookMethod(systemAppSetId, "getScope",
                         new ZygiskMethodHook() {
                             @Override
-                            protected void afterHookedMethod(MethodHookParam param) {
+                            public void afterHookedMethod(MethodHookParam param) {
                                 param.setResult(1);
                             }
                         });
@@ -160,7 +159,7 @@ public class AppSetIdHooks {
                     try {
                         LSPlantJavaWrapper.hookMethod(c, new ZygiskMethodHook() {
                             @Override
-                            protected void beforeHookedMethod(MethodHookParam param) {
+                            public void beforeHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getAppSetId();
                                 if (v != null) param.args[0] = v;
                                 if (param.args.length > 1
@@ -192,7 +191,7 @@ public class AppSetIdHooks {
             LSPlantJavaWrapper.findAndHookMethod(android.os.Binder.class, "attachInterface",
                     IInterface.class, String.class, new ZygiskMethodHook() {
                         @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                        public void afterHookedMethod(MethodHookParam param) {
                             if (!IAPPSET_SERVICE_DESCRIPTOR.equals(param.args[1])) return;
                             Object stub = param.args[0];
                             if (stub != null) {
@@ -202,7 +201,7 @@ public class AppSetIdHooks {
                     });
         } catch (Throwable t) {
             sAttachWatcherInstalled.set(false);
-            android.util.Log.i(TAG + ": attachInterface watcher failed: " + t.getMessage());
+            android.util.Log.i(TAG, "attachInterface watcher failed: " + t.getMessage());
         }
     }
 
@@ -226,7 +225,7 @@ public class AppSetIdHooks {
             try {
                 LSPlantJavaWrapper.hookMethod(m, new ZygiskMethodHook() {
                     @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
+                    public void beforeHookedMethod(MethodHookParam param) {
                         if (param.args == null) return;
                         for (int i = 0; i < param.args.length; i++) {
                             Object a = param.args[i];
@@ -238,7 +237,7 @@ public class AppSetIdHooks {
                     }
                 });
             } catch (Throwable t) {
-                android.util.Log.i(TAG + ": hook " + stubClass.getSimpleName()
+                android.util.Log.i(TAG, "hook " + stubClass.getSimpleName()
                         + "." + n + " failed: " + t.getMessage());
             }
         }
@@ -331,7 +330,7 @@ public class AppSetIdHooks {
         Field target = idField != null ? idField
                 : (stringFieldCount == 1 ? soleStringField : null);
         if (target == null) {
-            android.util.Log.i(TAG + ": " + n + " exposed no UUID-shaped id ("
+            android.util.Log.i(TAG, n + " exposed no UUID-shaped id ("
                     + stringFieldCount + " string fields); skipping rewrite");
             return;
         }
@@ -339,7 +338,7 @@ public class AppSetIdHooks {
             target.setAccessible(true);
             target.set(obj, spoof);
         } catch (Throwable t) {
-            android.util.Log.i(TAG + ": id rewrite on " + n + " failed: " + t.getMessage());
+            android.util.Log.i(TAG, "id rewrite on " + n + " failed: " + t.getMessage());
             return;
         }
 
