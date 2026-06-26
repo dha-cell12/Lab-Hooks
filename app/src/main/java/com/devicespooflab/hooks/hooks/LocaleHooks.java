@@ -1,5 +1,8 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.os.Build;
 import android.os.LocaleList;
 
@@ -8,16 +11,16 @@ import com.devicespooflab.hooks.utils.ConfigManager;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class LocaleHooks {
 
     private static final String TAG = "DeviceSpoofLab-Locale";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         hookTimeZone();
         hookLocale();
         if (Build.VERSION.SDK_INT >= 24) {
@@ -27,8 +30,8 @@ public class LocaleHooks {
 
     private static void hookTimeZone() {
         try {
-            XposedHelpers.findAndHookMethod(TimeZone.class, "getDefault",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(TimeZone.class, "getDefault",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String tz = ConfigManager.getSystemProperty(
@@ -39,27 +42,27 @@ public class LocaleHooks {
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook TimeZone.getDefault: " + t);
+            android.util.Log.i(TAG + ": failed to hook TimeZone.getDefault: " + t);
         }
     }
 
     private static void hookLocale() {
         try {
-            XposedHelpers.findAndHookMethod(Locale.class, "getDefault",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(Locale.class, "getDefault",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             param.setResult(buildLocale());
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook Locale.getDefault: " + t);
+            android.util.Log.i(TAG + ": failed to hook Locale.getDefault: " + t);
         }
 
         try {
-            XposedHelpers.findAndHookMethod(Locale.class, "getDefault",
+            LSPlantJavaWrapper.findAndHookMethod(Locale.class, "getDefault",
                     Locale.Category.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             param.setResult(buildLocale());
@@ -70,20 +73,20 @@ public class LocaleHooks {
 
     private static void hookLocaleList() {
         try {
-            XposedHelpers.findAndHookMethod(LocaleList.class, "getDefault",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(LocaleList.class, "getDefault",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new LocaleList(buildLocale()));
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook LocaleList.getDefault: " + t);
+            android.util.Log.i(TAG + ": failed to hook LocaleList.getDefault: " + t);
         }
 
         try {
-            XposedHelpers.findAndHookMethod(LocaleList.class, "getAdjustedDefault",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(LocaleList.class, "getAdjustedDefault",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new LocaleList(buildLocale()));
@@ -98,4 +101,7 @@ public class LocaleHooks {
                 ConfigManager.getLocaleCountry()
         );
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

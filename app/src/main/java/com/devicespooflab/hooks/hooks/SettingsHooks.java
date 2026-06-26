@@ -1,12 +1,15 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.content.ContentResolver;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
 
 public class SettingsHooks {
 
@@ -21,25 +24,26 @@ public class SettingsHooks {
     private static final String BLUETOOTH_NAME = "bluetooth_name";
     private static final String DEVICE_NAME = "device_name";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         hookClass(lpparam, "android.provider.Settings$Secure",
                 SPOOF_ANDROID_ID | SPOOF_GSF_ID | SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
         hookClass(lpparam, "android.provider.Settings$System",
                 SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
         hookClass(lpparam, "android.provider.Settings$Global",
                 SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
-    }
+
+}
 
     private static void hookClass(XC_LoadPackage.LoadPackageParam lpparam,
                                   String className,
                                   int spoofFlags) {
-        Class<?> clazz = XposedHelpers.findClassIfExists(className, lpparam.classLoader);
+        Class<?> clazz = findClass(className, classLoader);
         if (clazz == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(clazz, "getString",
+            LSPlantJavaWrapper.findAndHookMethod(clazz, "getString",
                     ContentResolver.class, String.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             String name = (String) param.args[1];
@@ -50,9 +54,9 @@ public class SettingsHooks {
         }
 
         try {
-            XposedHelpers.findAndHookMethod(clazz, "getString",
+            LSPlantJavaWrapper.findAndHookMethod(clazz, "getString",
                     ContentResolver.class, String.class, String.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             String name = (String) param.args[1];
@@ -63,9 +67,9 @@ public class SettingsHooks {
         }
 
         try {
-            XposedHelpers.findAndHookMethod(clazz, "getStringForUser",
+            LSPlantJavaWrapper.findAndHookMethod(clazz, "getStringForUser",
                     ContentResolver.class, String.class, int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             String name = (String) param.args[1];
@@ -103,4 +107,6 @@ public class SettingsHooks {
             if (model != null) param.setResult(model);
         }
     }
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

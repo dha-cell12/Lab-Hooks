@@ -1,15 +1,18 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class PackageManagerHooks {
 
@@ -107,25 +110,25 @@ public class PackageManagerHooks {
         "goldfish"
     ));
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         try {
-            Class<?> appPackageManagerClass = XposedHelpers.findClassIfExists(
-                "android.app.ApplicationPackageManager", lpparam.classLoader);
+            Class<?> appPackageManagerClass = findClass(
+                "android.app.ApplicationPackageManager", classLoader);
 
             if (appPackageManagerClass != null) {
                 hookHasSystemFeature(appPackageManagerClass);
                 hookGetSystemAvailableFeatures(appPackageManagerClass);
             }
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook PackageManager: " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook PackageManager: " + e.getMessage());
         }
     }
 
     private static void hookHasSystemFeature(Class<?> pmClass) {
         try {
-            XposedHelpers.findAndHookMethod(pmClass, "hasSystemFeature",
+            LSPlantJavaWrapper.findAndHookMethod(pmClass, "hasSystemFeature",
                 String.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String feature = (String) param.args[0];
@@ -147,13 +150,13 @@ public class PackageManagerHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook hasSystemFeature(String): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook hasSystemFeature(String): " + e.getMessage());
         }
 
         try {
-            XposedHelpers.findAndHookMethod(pmClass, "hasSystemFeature",
+            LSPlantJavaWrapper.findAndHookMethod(pmClass, "hasSystemFeature",
                 String.class, int.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String feature = (String) param.args[0];
@@ -175,14 +178,14 @@ public class PackageManagerHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook hasSystemFeature(String, int): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook hasSystemFeature(String, int): " + e.getMessage());
         }
     }
 
     private static void hookGetSystemAvailableFeatures(Class<?> pmClass) {
         try {
-            XposedHelpers.findAndHookMethod(pmClass, "getSystemAvailableFeatures",
-                new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(pmClass, "getSystemAvailableFeatures",
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         Object[] features = (Object[]) param.getResult();
@@ -224,7 +227,10 @@ public class PackageManagerHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook getSystemAvailableFeatures(): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook getSystemAvailableFeatures(): " + e.getMessage());
         }
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

@@ -1,5 +1,8 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import com.devicespooflab.hooks.utils.ConfigManager;
 
 import java.lang.reflect.Method;
@@ -8,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 // GAID spoof. Client-side AdvertisingIdClient hook + GMS-side
 // AdvertisingIdChimeraService.onBind hook + IAdvertisingIdService$Stub.onTransact
@@ -41,19 +44,20 @@ public class AdvertisingIdHooks {
     private static volatile long sWatcherDeadlineNanos = 0L;
     private static final long WATCHER_BUDGET_NANOS = 120_000_000_000L;
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> advertisingIdInfoClass = XposedHelpers.findClassIfExists(
+    public static void hook(ClassLoader classLoader) {
+        Class<?> advertisingIdInfoClass = findClass(
                 "com.google.android.gms.ads.identifier.AdvertisingIdClient$Info",
-                lpparam.classLoader);
+                classLoader);
         if (advertisingIdInfoClass != null) {
             try {
-                XposedHelpers.findAndHookMethod(advertisingIdInfoClass, "getId",
-                        new XC_MethodHook() {
+                LSPlantJavaWrapper.findAndHookMethod(advertisingIdInfoClass, "getId",
+                        new ZygiskMethodHook() {
                             @Override
                             protected void afterHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getGAID();
                                 if (v != null) param.setResult(v);
-                            }
+
+}
                         });
             } catch (NoSuchMethodError ignored) {
             }
@@ -61,9 +65,9 @@ public class AdvertisingIdHooks {
             // cached Info instance without invoking getId(). Rewriting the
             // constructor argument means any accessor sees the spoofed value.
             try {
-                XposedHelpers.findAndHookConstructor(advertisingIdInfoClass,
+                LSPlantJavaWrapper.findAndHookConstructor(advertisingIdInfoClass,
                         String.class, boolean.class,
-                        new XC_MethodHook() {
+                        new ZygiskMethodHook() {
                             @Override
                             protected void beforeHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getGAID();
@@ -76,13 +80,13 @@ public class AdvertisingIdHooks {
 
         // AIDL stub proxy — covers callers that bypass the Info class and
         // invoke IAdvertisingIdService directly via reflection.
-        Class<?> adIdServiceStub = XposedHelpers.findClassIfExists(
+        Class<?> adIdServiceStub = findClass(
                 "com.google.android.gms.ads.identifier.internal.IAdvertisingIdService$Stub$Proxy",
-                lpparam.classLoader);
+                classLoader);
         if (adIdServiceStub != null) {
             try {
-                XposedHelpers.findAndHookMethod(adIdServiceStub, "getId",
-                        new XC_MethodHook() {
+                LSPlantJavaWrapper.findAndHookMethod(adIdServiceStub, "getId",
+                        new ZygiskMethodHook() {
                             @Override
                             protected void afterHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getGAID();
@@ -96,12 +100,12 @@ public class AdvertisingIdHooks {
         // Android 14+ Privacy Sandbox AdId. The framework constructs this
         // from the IPC reply, so the constructor hook catches the value as
         // it crosses into app code.
-        Class<?> adIdClass = XposedHelpers.findClassIfExists(
-                "android.adservices.adid.AdId", lpparam.classLoader);
+        Class<?> adIdClass = findClass(
+                "android.adservices.adid.AdId", classLoader);
         if (adIdClass != null) {
             try {
-                XposedHelpers.findAndHookMethod(adIdClass, "getAdId",
-                        new XC_MethodHook() {
+                LSPlantJavaWrapper.findAndHookMethod(adIdClass, "getAdId",
+                        new ZygiskMethodHook() {
                             @Override
                             protected void afterHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getGAID();
@@ -114,7 +118,7 @@ public class AdvertisingIdHooks {
                 Class<?>[] types = c.getParameterTypes();
                 if (types.length >= 1 && types[0] == String.class) {
                     try {
-                        XposedBridge.hookMethod(c, new XC_MethodHook() {
+                        LSPlantJavaWrapper.hookMethod(c, new ZygiskMethodHook() {
                             @Override
                             protected void beforeHookedMethod(MethodHookParam param) {
                                 String v = ConfigManager.getGAID();
@@ -131,7 +135,7 @@ public class AdvertisingIdHooks {
         // real id in the first place. attachInterface discovery is the reliable
         // path (descriptor survives obfuscation); the name-based watcher stays
         // as a fallback for builds where the descriptor differs.
-        if ("com.google.android.gms".equals(lpparam.packageName)) {
+        if ("com.google.android.gms".equals("")) {
             installGmsAdIdAttachInterfaceHook();
             hookIAdvertisingIdServiceStub(lpparam);
         }
@@ -144,8 +148,8 @@ public class AdvertisingIdHooks {
     private static void installGmsAdIdAttachInterfaceHook() {
         if (!sAttachIfaceHooked.compareAndSet(false, true)) return;
         try {
-            XposedHelpers.findAndHookMethod(android.os.Binder.class, "attachInterface",
-                    android.os.IInterface.class, String.class, new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(android.os.Binder.class, "attachInterface",
+                    android.os.IInterface.class, String.class, new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             try {
@@ -164,7 +168,7 @@ public class AdvertisingIdHooks {
                     });
         } catch (Throwable t) {
             sAttachIfaceHooked.set(false);
-            XposedBridge.log("DeviceSpoofLab-GAID: attachInterface discovery install failed: "
+            android.util.Log.i("DeviceSpoofLab-GAID: attachInterface discovery install failed: "
                     + t.getMessage());
         }
     }
@@ -172,7 +176,7 @@ public class AdvertisingIdHooks {
     private static void hookIAdvertisingIdServiceStub(XC_LoadPackage.LoadPackageParam lpparam) {
         // Direct path: if the Stub class is already on the classpath, hook it now
         // and skip the class-load watcher entirely.
-        Class<?> stub = XposedHelpers.findClassIfExists(GAID_STUB_NAME, lpparam.classLoader);
+        Class<?> stub = findClass(GAID_STUB_NAME, classLoader);
         if (stub != null) {
             installStubOnTransactHook(stub);
             return;
@@ -188,23 +192,23 @@ public class AdvertisingIdHooks {
         // the Chimera module loaders all inherit it, it fires only on first
         // definition, and the watcher retires itself the instant it lands a
         // getId() hook (see watchForStub / removeWatchers).
-        XC_MethodHook watcher = watchForStub();
+        ZygiskMethodHook watcher = watchForStub();
         sWatcherDeadlineNanos = System.nanoTime() + WATCHER_BUDGET_NANOS;
         try {
             Class<?> baseDex = Class.forName("dalvik.system.BaseDexClassLoader");
-            XC_MethodHook.Unhook u = XposedHelpers.findAndHookMethod(
+            XC_MethodHook.Unhook u = LSPlantJavaWrapper.findAndHookMethod(
                     baseDex, "findClass", String.class, watcher);
             synchronized (sWatcherUnhooks) {
                 sWatcherUnhooks.add(u);
             }
         } catch (Throwable t) {
-            XposedBridge.log("DeviceSpoofLab-GAID: class-load watcher install failed: "
+            android.util.Log.i("DeviceSpoofLab-GAID: class-load watcher install failed: "
                     + t.getMessage());
         }
     }
 
-    private static XC_MethodHook watchForStub() {
-        return new XC_MethodHook() {
+    private static ZygiskMethodHook watchForStub() {
+        return new ZygiskMethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 if (sWatcherRetired.get()) return;
@@ -255,8 +259,8 @@ public class AdvertisingIdHooks {
     private static void installChimeraServiceOnBindHook(Class<?> cls) {
         if (!sChimeraOnBindInstalled.compareAndSet(false, true)) return;
         try {
-            XposedHelpers.findAndHookMethod(cls, "onBind",
-                    android.content.Intent.class, new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(cls, "onBind",
+                    android.content.Intent.class, new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             Object binder = param.getResult();
@@ -277,7 +281,7 @@ public class AdvertisingIdHooks {
                     });
         } catch (Throwable t) {
             sChimeraOnBindInstalled.set(false);
-            XposedBridge.log("DeviceSpoofLab-GAID: ChimeraService.onBind hook failed: "
+            android.util.Log.i("DeviceSpoofLab-GAID: ChimeraService.onBind hook failed: "
                     + t.getMessage());
         }
     }
@@ -315,7 +319,7 @@ public class AdvertisingIdHooks {
     private static void hookGetIdMethod(Method m) {
         if (!sGetIdHooked.compareAndSet(false, true)) return;
         try {
-            XposedBridge.hookMethod(m, new XC_MethodHook() {
+            LSPlantJavaWrapper.hookMethod(m, new ZygiskMethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) {
                     String v = ConfigManager.getGAID();
@@ -330,9 +334,9 @@ public class AdvertisingIdHooks {
     private static void installStubOnTransactHook(Class<?> stub) {
         if (!sStubHookInstalled.compareAndSet(false, true)) return;
         try {
-            XposedHelpers.findAndHookMethod(stub, "onTransact",
+            LSPlantJavaWrapper.findAndHookMethod(stub, "onTransact",
                     int.class, android.os.Parcel.class, android.os.Parcel.class, int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             int code = (int) param.args[0];
@@ -355,4 +359,6 @@ public class AdvertisingIdHooks {
             sStubHookInstalled.set(false);
         }
     }
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

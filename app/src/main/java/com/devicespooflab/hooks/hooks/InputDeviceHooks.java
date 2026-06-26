@@ -1,20 +1,23 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.view.InputDevice;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class InputDeviceHooks {
 
     private static final String TAG = "DeviceSpoofLab-InputDevice";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         try {
-            XposedHelpers.findAndHookMethod(InputDevice.class, "getName",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(InputDevice.class, "getName",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String name = (String) param.getResult();
@@ -24,12 +27,12 @@ public class InputDeviceHooks {
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook InputDevice.getName: " + t);
+            android.util.Log.i(TAG + ": failed to hook InputDevice.getName: " + t);
         }
 
         try {
-            XposedHelpers.findAndHookMethod(InputDevice.class, "getDescriptor",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(InputDevice.class, "getDescriptor",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String desc = (String) param.getResult();
@@ -46,4 +49,7 @@ public class InputDeviceHooks {
         return lower.contains("goldfish") || lower.contains("qemu")
                 || lower.contains("ranchu") || lower.contains("vbox");
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

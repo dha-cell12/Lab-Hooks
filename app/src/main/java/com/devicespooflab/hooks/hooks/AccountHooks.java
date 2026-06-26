@@ -1,44 +1,47 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.accounts.Account;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 // AccountManager.getAccounts is hooked; getAccountsByType is intentionally not.
 public class AccountHooks {
 
     private static final String TAG = "DeviceSpoofLab-Account";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         if (!ConfigManager.isHideAccountsEnabled()) {
             return;
         }
 
-        Class<?> am = XposedHelpers.findClassIfExists(
-                "android.accounts.AccountManager", lpparam.classLoader);
+        Class<?> am = findClass(
+                "android.accounts.AccountManager", classLoader);
         if (am == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(am, "getAccounts",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(am, "getAccounts",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new Account[0]);
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook getAccounts: " + t);
+            android.util.Log.i(TAG + ": failed to hook getAccounts: " + t);
         }
 
         try {
-            XposedHelpers.findAndHookMethod(am, "getAccountsAsUser",
+            LSPlantJavaWrapper.findAndHookMethod(am, "getAccountsAsUser",
                     int.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             param.setResult(new Account[0]);
@@ -46,4 +49,7 @@ public class AccountHooks {
                     });
         } catch (Throwable t) { /* hidden API; may be missing */ }
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

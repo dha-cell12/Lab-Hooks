@@ -1,19 +1,22 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
 
 public class MediaDrmHooks {
 
     private static final String DEVICE_UNIQUE_ID = "deviceUniqueId";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> mediaDrmClass = XposedHelpers.findClassIfExists(
+    public static void hook(ClassLoader classLoader) {
+        Class<?> mediaDrmClass = findClass(
                 "android.media.MediaDrm",
-                lpparam.classLoader
+                classLoader
         );
 
         if (mediaDrmClass == null) {
@@ -21,9 +24,9 @@ public class MediaDrmHooks {
         }
 
         try {
-            XposedHelpers.findAndHookMethod(mediaDrmClass, "getPropertyByteArray",
+            LSPlantJavaWrapper.findAndHookMethod(mediaDrmClass, "getPropertyByteArray",
                     String.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String propertyName = (String) param.args[0];
@@ -37,4 +40,7 @@ public class MediaDrmHooks {
         } catch (NoSuchMethodError ignored) {
         }
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

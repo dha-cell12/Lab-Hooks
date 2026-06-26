@@ -1,32 +1,35 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.os.Build;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class EuiccHooks {
 
     private static final String TAG = "DeviceSpoofLab-Euicc";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         hook(lpparam, Build.VERSION.SDK_INT);
     }
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam, int realDeviceSdk) {
+    public static void hook(ClassLoader classLoader, int realDeviceSdk) {
         if (realDeviceSdk < 28) return;
 
-        Class<?> em = XposedHelpers.findClassIfExists(
-                "android.telephony.euicc.EuiccManager", lpparam.classLoader);
+        Class<?> em = findClass(
+                "android.telephony.euicc.EuiccManager", classLoader);
         if (em == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(em, "getEid",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(em, "getEid",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String v = ConfigManager.getEid();
@@ -34,7 +37,10 @@ public class EuiccHooks {
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook EuiccManager.getEid: " + t);
+            android.util.Log.i(TAG + ": failed to hook EuiccManager.getEid: " + t);
         }
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

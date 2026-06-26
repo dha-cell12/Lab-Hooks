@@ -16,6 +16,7 @@ add_library(ds_native SHARED
     zygisk_main.cpp
     config_loader.cpp
     java_hooks.cpp
+    lsplant_wrapper.cpp
 )
 
 target_include_directories(ds_native PRIVATE include)

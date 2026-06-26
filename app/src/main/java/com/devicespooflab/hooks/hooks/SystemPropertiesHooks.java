@@ -1,15 +1,18 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import com.devicespooflab.hooks.utils.ConfigManager;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class SystemPropertiesHooks {
 
@@ -18,24 +21,25 @@ public class SystemPropertiesHooks {
     private static final Set<Class<?>> HOOKED_CLASSES =
             Collections.newSetFromMap(new ConcurrentHashMap<Class<?>, Boolean>());
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         try {
-            hookSystemProperties(lpparam.classLoader);
+            hookSystemProperties(classLoader);
 
             try {
                 ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-                if (systemClassLoader != null && systemClassLoader != lpparam.classLoader) {
+                if (systemClassLoader != null && systemClassLoader != classLoader) {
                     hookSystemProperties(systemClassLoader);
-                }
+
+}
             } catch (Exception ignored) {
             }
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook SystemProperties: " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook SystemProperties: " + e.getMessage());
         }
     }
 
     private static void hookSystemProperties(ClassLoader classLoader) {
-        Class<?> sysPropClass = XposedHelpers.findClassIfExists(SYSTEM_PROPERTIES_CLASS, classLoader);
+        Class<?> sysPropClass = findClass(SYSTEM_PROPERTIES_CLASS, classLoader);
 
         if (sysPropClass == null) {
             return;
@@ -46,9 +50,9 @@ public class SystemPropertiesHooks {
 
         // Hook get(String key)
         try {
-            XposedHelpers.findAndHookMethod(sysPropClass, "get",
+            LSPlantJavaWrapper.findAndHookMethod(sysPropClass, "get",
                 String.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
@@ -61,14 +65,14 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook get(String): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook get(String): " + e.getMessage());
         }
 
         // Hook get(String key, String def)
         try {
-            XposedHelpers.findAndHookMethod(sysPropClass, "get",
+            LSPlantJavaWrapper.findAndHookMethod(sysPropClass, "get",
                 String.class, String.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
@@ -81,14 +85,14 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook get(String, String): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook get(String, String): " + e.getMessage());
         }
 
         // Hook getInt(String key, int def)
         try {
-            XposedHelpers.findAndHookMethod(sysPropClass, "getInt",
+            LSPlantJavaWrapper.findAndHookMethod(sysPropClass, "getInt",
                 String.class, int.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
@@ -105,14 +109,14 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook getInt(String, int): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook getInt(String, int): " + e.getMessage());
         }
 
         // Hook getBoolean(String key, boolean def)
         try {
-            XposedHelpers.findAndHookMethod(sysPropClass, "getBoolean",
+            LSPlantJavaWrapper.findAndHookMethod(sysPropClass, "getBoolean",
                 String.class, boolean.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
@@ -127,14 +131,14 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook getBoolean(String, boolean): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook getBoolean(String, boolean): " + e.getMessage());
         }
 
         // Hook getLong(String key, long def)
         try {
-            XposedHelpers.findAndHookMethod(sysPropClass, "getLong",
+            LSPlantJavaWrapper.findAndHookMethod(sysPropClass, "getLong",
                 String.class, long.class,
-                new XC_MethodHook() {
+                new ZygiskMethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         String key = (String) param.args[0];
@@ -151,7 +155,9 @@ public class SystemPropertiesHooks {
                     }
                 });
         } catch (Exception e) {
-            XposedBridge.log(TAG + ": Failed to hook getLong(String, long): " + e.getMessage());
+            android.util.Log.i(TAG + ": Failed to hook getLong(String, long): " + e.getMessage());
         }
     }
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

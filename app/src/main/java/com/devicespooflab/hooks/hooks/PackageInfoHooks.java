@@ -1,14 +1,17 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 // Install times reported as 60-120 days ago, derived from android_id so the
 // per-install value stays stable across reads.
@@ -17,18 +20,18 @@ public class PackageInfoHooks {
     private static final String TAG = "DeviceSpoofLab-PackageInfo";
     private static final long DAY_MS = 86_400_000L;
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         hookPackageInfoFields(lpparam);
         hookGetInstallerPackageName(lpparam);
         hookGetInstallSourceInfo(lpparam);
     }
 
     private static void hookPackageInfoFields(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appPm = XposedHelpers.findClassIfExists(
-                "android.app.ApplicationPackageManager", lpparam.classLoader);
+        Class<?> appPm = findClass(
+                "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
-        XC_MethodHook patcher = new XC_MethodHook() {
+        ZygiskMethodHook patcher = new ZygiskMethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 Object result = param.getResult();
@@ -40,29 +43,29 @@ public class PackageInfoHooks {
 
         // getPackageInfo(String, int) and getPackageInfo(String, PackageInfoFlags)
         try {
-            XposedHelpers.findAndHookMethod(appPm, "getPackageInfo",
+            LSPlantJavaWrapper.findAndHookMethod(appPm, "getPackageInfo",
                     String.class, int.class, patcher);
         } catch (Throwable t) { logFail("getPackageInfo(String,int)", t); }
 
         try {
-            Class<?> flags = XposedHelpers.findClassIfExists(
-                    "android.content.pm.PackageManager$PackageInfoFlags", lpparam.classLoader);
+            Class<?> flags = findClass(
+                    "android.content.pm.PackageManager$PackageInfoFlags", classLoader);
             if (flags != null) {
-                XposedHelpers.findAndHookMethod(appPm, "getPackageInfo",
+                LSPlantJavaWrapper.findAndHookMethod(appPm, "getPackageInfo",
                         String.class, flags, patcher);
             }
         } catch (Throwable t) { /* Android 13+ overload */ }
     }
 
     private static void hookGetInstallerPackageName(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appPm = XposedHelpers.findClassIfExists(
-                "android.app.ApplicationPackageManager", lpparam.classLoader);
+        Class<?> appPm = findClass(
+                "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(appPm, "getInstallerPackageName",
+            LSPlantJavaWrapper.findAndHookMethod(appPm, "getInstallerPackageName",
                     String.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String packageName = (String) param.args[0];
@@ -76,13 +79,13 @@ public class PackageInfoHooks {
 
     private static boolean shouldSpoofInstaller(XC_LoadPackage.LoadPackageParam lpparam,
                                                 String packageName) {
-        if (packageName == null || lpparam.packageName == null) {
+        if (packageName == null || "" == null) {
             return false;
         }
-        if (!lpparam.packageName.equals(packageName)) {
+        if (!"".equals(packageName)) {
             return false;
         }
-        if (ConfigManager.isOwnPackageProcess(lpparam.packageName)) {
+        if (ConfigManager.isOwnPackageProcess("")) {
             return false;
         }
         if (lpparam.appInfo == null) {
@@ -93,16 +96,16 @@ public class PackageInfoHooks {
     }
 
     private static void hookGetInstallSourceInfo(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> appPm = XposedHelpers.findClassIfExists(
-                "android.app.ApplicationPackageManager", lpparam.classLoader);
+        Class<?> appPm = findClass(
+                "android.app.ApplicationPackageManager", classLoader);
         if (appPm == null) return;
 
-        Class<?> sourceInfo = XposedHelpers.findClassIfExists(
-                "android.content.pm.InstallSourceInfo", lpparam.classLoader);
+        Class<?> sourceInfo = findClass(
+                "android.content.pm.InstallSourceInfo", classLoader);
         if (sourceInfo == null) return;
 
         // InstallSourceInfo getters — hook each accessor to return Play Store.
-        XC_MethodHook playStoreHook = new XC_MethodHook() {
+        ZygiskMethodHook playStoreHook = new ZygiskMethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 param.setResult(ConfigManager.getInstallerPackage());
@@ -115,7 +118,7 @@ public class PackageInfoHooks {
                 "getOriginatingPackageName"
         }) {
             try {
-                XposedHelpers.findAndHookMethod(sourceInfo, getter, playStoreHook);
+                LSPlantJavaWrapper.findAndHookMethod(sourceInfo, getter, playStoreHook);
             } catch (Throwable t) { /* getter may be absent on older Android */ }
         }
     }
@@ -146,6 +149,9 @@ public class PackageInfoHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        XposedBridge.log(TAG + ": failed to hook " + what + ": " + t);
+        android.util.Log.i(TAG + ": failed to hook " + what + ": " + t);
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

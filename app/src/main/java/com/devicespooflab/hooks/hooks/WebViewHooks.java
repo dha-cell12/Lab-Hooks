@@ -1,5 +1,8 @@
 package com.devicespooflab.hooks.hooks;
 
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
@@ -18,16 +21,16 @@ import android.webkit.WebViewClient;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+
+
+
 
 public class WebViewHooks {
 
     private static final String TAG = "DeviceSpoofLab-WebView";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(ClassLoader classLoader) {
         try {
             hookWebSettings(lpparam);
             hookWebViewConstructor(lpparam);
@@ -35,18 +38,18 @@ public class WebViewHooks {
             hookGetWebViewClient(lpparam);
             hookLoadUrl(lpparam);
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": init failed: " + t);
+            android.util.Log.i(TAG + ": init failed: " + t);
         }
     }
 
     private static void hookWebSettings(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = XposedHelpers.findClassIfExists(
-                "android.webkit.WebView", lpparam.classLoader);
+        Class<?> webViewClass = findClass(
+                "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(webViewClass, "getSettings",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(webViewClass, "getSettings",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             Object settings = param.getResult();
@@ -60,16 +63,16 @@ public class WebViewHooks {
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook WebView.getSettings: " + t);
+            android.util.Log.i(TAG + ": failed to hook WebView.getSettings: " + t);
         }
     }
 
     private static void hookWebViewConstructor(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = XposedHelpers.findClassIfExists(
-                "android.webkit.WebView", lpparam.classLoader);
+        Class<?> webViewClass = findClass(
+                "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
-        XC_MethodHook setUaHook = new XC_MethodHook() {
+        ZygiskMethodHook setUaHook = new ZygiskMethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 try {
@@ -87,30 +90,30 @@ public class WebViewHooks {
         };
 
         try {
-            XposedHelpers.findAndHookConstructor(webViewClass,
+            LSPlantJavaWrapper.findAndHookConstructor(webViewClass,
                     Context.class, setUaHook);
         } catch (Throwable t) { logFail("WebView(Context)", t); }
 
         try {
-            XposedHelpers.findAndHookConstructor(webViewClass,
+            LSPlantJavaWrapper.findAndHookConstructor(webViewClass,
                     Context.class, android.util.AttributeSet.class, setUaHook);
         } catch (Throwable t) { logFail("WebView(Context,AttributeSet)", t); }
 
         try {
-            XposedHelpers.findAndHookConstructor(webViewClass,
+            LSPlantJavaWrapper.findAndHookConstructor(webViewClass,
                     Context.class, android.util.AttributeSet.class, int.class, setUaHook);
         } catch (Throwable t) { logFail("WebView(Context,AttributeSet,int)", t); }
     }
 
     private static void hookSetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = XposedHelpers.findClassIfExists(
-                "android.webkit.WebView", lpparam.classLoader);
+        Class<?> webViewClass = findClass(
+                "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(webViewClass, "setWebViewClient",
+            LSPlantJavaWrapper.findAndHookMethod(webViewClass, "setWebViewClient",
                     WebViewClient.class,
-                    new XC_MethodHook() {
+                    new ZygiskMethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             WebViewClient orig = (WebViewClient) param.args[0];
@@ -122,13 +125,13 @@ public class WebViewHooks {
     }
 
     private static void hookGetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = XposedHelpers.findClassIfExists(
-                "android.webkit.WebView", lpparam.classLoader);
+        Class<?> webViewClass = findClass(
+                "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(webViewClass, "getWebViewClient",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(webViewClass, "getWebViewClient",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             Object res = param.getResult();
@@ -144,11 +147,11 @@ public class WebViewHooks {
     }
 
     private static void hookLoadUrl(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> webViewClass = XposedHelpers.findClassIfExists(
-                "android.webkit.WebView", lpparam.classLoader);
+        Class<?> webViewClass = findClass(
+                "android.webkit.WebView", classLoader);
         if (webViewClass == null) return;
 
-        XC_MethodHook injectHook = new XC_MethodHook() {
+        ZygiskMethodHook injectHook = new ZygiskMethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 injectAsync(param.thisObject);
@@ -156,17 +159,17 @@ public class WebViewHooks {
         };
 
         try {
-            XposedHelpers.findAndHookMethod(webViewClass, "loadUrl",
+            LSPlantJavaWrapper.findAndHookMethod(webViewClass, "loadUrl",
                     String.class, injectHook);
         } catch (Throwable t) { logFail("WebView.loadUrl(String)", t); }
 
         try {
-            XposedHelpers.findAndHookMethod(webViewClass, "loadUrl",
+            LSPlantJavaWrapper.findAndHookMethod(webViewClass, "loadUrl",
                     String.class, java.util.Map.class, injectHook);
         } catch (Throwable t) { /* overload */ }
 
         try {
-            XposedHelpers.findAndHookMethod(webViewClass, "loadDataWithBaseURL",
+            LSPlantJavaWrapper.findAndHookMethod(webViewClass, "loadDataWithBaseURL",
                     String.class, String.class, String.class, String.class, String.class,
                     injectHook);
         } catch (Throwable t) { /* overload */ }
@@ -188,7 +191,7 @@ public class WebViewHooks {
     }
 
     private static void logFail(String what, Throwable t) {
-        XposedBridge.log(TAG + ": failed to hook " + what + ": " + t);
+        android.util.Log.i(TAG + ": failed to hook " + what + ": " + t);
     }
 
     // Forwards every WebViewClient callback to the original (or the platform
@@ -527,4 +530,7 @@ public class WebViewHooks {
             "    try { Object.defineProperty(window, 'devicePixelRatio', { get: function(){ return DPR; }, configurable: true }); } catch(e){}\n" +
             "  } catch(e){}\n" +
             "})();";
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }

@@ -1,22 +1,25 @@
 package com.devicespooflab.hooks.hooks;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.LSPlantJavaWrapper;
+import com.devicespooflab.hooks.ZygiskMethodHook;
+
+
+
+
+
 
 public class CameraHooks {
 
     private static final String TAG = "DeviceSpoofLab-Camera";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
-        Class<?> cm = XposedHelpers.findClassIfExists(
-                "android.hardware.camera2.CameraManager", lpparam.classLoader);
+    public static void hook(ClassLoader classLoader) {
+        Class<?> cm = findClass(
+                "android.hardware.camera2.CameraManager", classLoader);
         if (cm == null) return;
 
         try {
-            XposedHelpers.findAndHookMethod(cm, "getCameraIdList",
-                    new XC_MethodHook() {
+            LSPlantJavaWrapper.findAndHookMethod(cm, "getCameraIdList",
+                    new ZygiskMethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             String[] ids = (String[]) param.getResult();
@@ -35,7 +38,10 @@ public class CameraHooks {
                         }
                     });
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": failed to hook getCameraIdList: " + t);
+            android.util.Log.i(TAG + ": failed to hook getCameraIdList: " + t);
         }
     }
+
+
+    private static Class<?> findClass(String name, ClassLoader loader) { try { return Class.forName(name, true, loader); } catch (Exception e) { return null; } }
 }
