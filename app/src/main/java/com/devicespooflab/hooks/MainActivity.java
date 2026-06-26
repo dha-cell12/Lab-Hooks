@@ -515,9 +515,7 @@ public class MainActivity extends AppCompatActivity {
     // Publishes the in-memory config to RemotePreferences when the writable
     // binder is bound; a no-op otherwise. Always invoked on persistExecutor.
     private void publishIfWritable() {
-        if (XposedServiceBridge.isServiceWritable()) {
-            ConfigManager.publishToRemotePreferences();
-        }
+        com.devicespooflab.hooks.utils.ZygiskConfigBridge.saveConfig(ConfigManager.getRawProperties());
     }
 
     private void makePrefsWorldReadable() {
