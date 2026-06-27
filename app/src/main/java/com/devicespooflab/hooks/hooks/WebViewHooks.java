@@ -18,16 +18,16 @@ import android.webkit.WebViewClient;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class WebViewHooks {
 
     private static final String TAG = "DeviceSpoofLab-WebView";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             hookWebSettings(lpparam);
             hookWebViewConstructor(lpparam);
@@ -39,7 +39,7 @@ public class WebViewHooks {
         }
     }
 
-    private static void hookWebSettings(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWebSettings(LoadPackageParam lpparam) {
         Class<?> webViewClass = XposedHelpers.findClassIfExists(
                 "android.webkit.WebView", lpparam.classLoader);
         if (webViewClass == null) return;
@@ -64,7 +64,7 @@ public class WebViewHooks {
         }
     }
 
-    private static void hookWebViewConstructor(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWebViewConstructor(LoadPackageParam lpparam) {
         Class<?> webViewClass = XposedHelpers.findClassIfExists(
                 "android.webkit.WebView", lpparam.classLoader);
         if (webViewClass == null) return;
@@ -102,7 +102,7 @@ public class WebViewHooks {
         } catch (Throwable t) { logFail("WebView(Context,AttributeSet,int)", t); }
     }
 
-    private static void hookSetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookSetWebViewClient(LoadPackageParam lpparam) {
         Class<?> webViewClass = XposedHelpers.findClassIfExists(
                 "android.webkit.WebView", lpparam.classLoader);
         if (webViewClass == null) return;
@@ -121,7 +121,7 @@ public class WebViewHooks {
         } catch (Throwable t) { logFail("WebView.setWebViewClient", t); }
     }
 
-    private static void hookGetWebViewClient(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookGetWebViewClient(LoadPackageParam lpparam) {
         Class<?> webViewClass = XposedHelpers.findClassIfExists(
                 "android.webkit.WebView", lpparam.classLoader);
         if (webViewClass == null) return;
@@ -143,7 +143,7 @@ public class WebViewHooks {
         }
     }
 
-    private static void hookLoadUrl(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookLoadUrl(LoadPackageParam lpparam) {
         Class<?> webViewClass = XposedHelpers.findClassIfExists(
                 "android.webkit.WebView", lpparam.classLoader);
         if (webViewClass == null) return;

@@ -4,17 +4,17 @@ import android.os.StatFs;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class StorageHooks {
 
     private static final String TAG = "DeviceSpoofLab-Storage";
     private static final long BLOCK_SIZE = 4096L;
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             XposedHelpers.findAndHookMethod(StatFs.class, "getBlockSizeLong",
                     new XC_MethodHook() {

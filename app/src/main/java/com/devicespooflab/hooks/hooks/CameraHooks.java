@@ -1,15 +1,15 @@
 package com.devicespooflab.hooks.hooks;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class CameraHooks {
 
     private static final String TAG = "DeviceSpoofLab-Camera";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         Class<?> cm = XposedHelpers.findClassIfExists(
                 "android.hardware.camera2.CameraManager", lpparam.classLoader);
         if (cm == null) return;

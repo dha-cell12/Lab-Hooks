@@ -6,10 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class PackageManagerHooks {
 
@@ -107,7 +107,7 @@ public class PackageManagerHooks {
         "goldfish"
     ));
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             Class<?> appPackageManagerClass = XposedHelpers.findClassIfExists(
                 "android.app.ApplicationPackageManager", lpparam.classLoader);

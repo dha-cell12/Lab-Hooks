@@ -5,10 +5,10 @@ import android.content.pm.PackageInfo;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 // Install times reported as 60-120 days ago, derived from android_id so the
 // per-install value stays stable across reads.
@@ -17,13 +17,13 @@ public class PackageInfoHooks {
     private static final String TAG = "DeviceSpoofLab-PackageInfo";
     private static final long DAY_MS = 86_400_000L;
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         hookPackageInfoFields(lpparam);
         hookGetInstallerPackageName(lpparam);
         hookGetInstallSourceInfo(lpparam);
     }
 
-    private static void hookPackageInfoFields(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookPackageInfoFields(LoadPackageParam lpparam) {
         Class<?> appPm = XposedHelpers.findClassIfExists(
                 "android.app.ApplicationPackageManager", lpparam.classLoader);
         if (appPm == null) return;
@@ -54,7 +54,7 @@ public class PackageInfoHooks {
         } catch (Throwable t) { /* Android 13+ overload */ }
     }
 
-    private static void hookGetInstallerPackageName(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookGetInstallerPackageName(LoadPackageParam lpparam) {
         Class<?> appPm = XposedHelpers.findClassIfExists(
                 "android.app.ApplicationPackageManager", lpparam.classLoader);
         if (appPm == null) return;
@@ -74,7 +74,7 @@ public class PackageInfoHooks {
         } catch (Throwable t) { logFail("getInstallerPackageName", t); }
     }
 
-    private static boolean shouldSpoofInstaller(XC_LoadPackage.LoadPackageParam lpparam,
+    private static boolean shouldSpoofInstaller(LoadPackageParam lpparam,
                                                 String packageName) {
         if (packageName == null || lpparam.packageName == null) {
             return false;
@@ -92,7 +92,7 @@ public class PackageInfoHooks {
         return (lpparam.appInfo.flags & systemFlags) == 0;
     }
 
-    private static void hookGetInstallSourceInfo(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookGetInstallSourceInfo(LoadPackageParam lpparam) {
         Class<?> appPm = XposedHelpers.findClassIfExists(
                 "android.app.ApplicationPackageManager", lpparam.classLoader);
         if (appPm == null) return;

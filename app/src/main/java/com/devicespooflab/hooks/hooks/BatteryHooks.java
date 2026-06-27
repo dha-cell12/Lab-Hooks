@@ -4,17 +4,17 @@ import android.os.BatteryManager;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 // Live charge level is passthrough; only the design counters are overridden.
 public class BatteryHooks {
 
     private static final String TAG = "DeviceSpoofLab-Battery";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             XposedHelpers.findAndHookMethod(BatteryManager.class, "getIntProperty",
                     int.class,

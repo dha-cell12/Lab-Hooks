@@ -4,20 +4,20 @@ import android.os.Build;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class EuiccHooks {
 
     private static final String TAG = "DeviceSpoofLab-Euicc";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         hook(lpparam, Build.VERSION.SDK_INT);
     }
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam, int realDeviceSdk) {
+    public static void hook(LoadPackageParam lpparam, int realDeviceSdk) {
         if (realDeviceSdk < 28) return;
 
         Class<?> em = XposedHelpers.findClassIfExists(

@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 // GAID spoof. Client-side AdvertisingIdClient hook + GMS-side
 // AdvertisingIdChimeraService.onBind hook + IAdvertisingIdService$Stub.onTransact
@@ -41,7 +41,7 @@ public class AdvertisingIdHooks {
     private static volatile long sWatcherDeadlineNanos = 0L;
     private static final long WATCHER_BUDGET_NANOS = 120_000_000_000L;
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         Class<?> advertisingIdInfoClass = XposedHelpers.findClassIfExists(
                 "com.google.android.gms.ads.identifier.AdvertisingIdClient$Info",
                 lpparam.classLoader);
@@ -169,7 +169,7 @@ public class AdvertisingIdHooks {
         }
     }
 
-    private static void hookIAdvertisingIdServiceStub(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookIAdvertisingIdServiceStub(LoadPackageParam lpparam) {
         // Direct path: if the Stub class is already on the classpath, hook it now
         // and skip the class-load watcher entirely.
         Class<?> stub = XposedHelpers.findClassIfExists(GAID_STUB_NAME, lpparam.classLoader);

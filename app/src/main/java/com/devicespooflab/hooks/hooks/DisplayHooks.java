@@ -7,17 +7,17 @@ import android.view.Display;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class DisplayHooks {
 
     private static final String TAG = "DeviceSpoofLab-Display";
     private static final float REFRESH_RATE_HZ = 120.0f;
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             hookDisplayMethods();
             hookResourcesGetDisplayMetrics();
@@ -130,7 +130,7 @@ public class DisplayHooks {
         } catch (Throwable t) { logFail("Display.getRefreshRate", t); }
     }
 
-    private static void hookWindowMetrics(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWindowMetrics(LoadPackageParam lpparam) {
         // Android 11+: WindowMetrics.getBounds() returns a Rect with the display
         // bounds. Apps using this code path bypass the legacy Display getters.
         Class<?> wmClass = XposedHelpers.findClassIfExists(

@@ -8,16 +8,16 @@ import com.devicespooflab.hooks.utils.ConfigManager;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class LocaleHooks {
 
     private static final String TAG = "DeviceSpoofLab-Locale";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         hookTimeZone();
         hookLocale();
         if (Build.VERSION.SDK_INT >= 24) {

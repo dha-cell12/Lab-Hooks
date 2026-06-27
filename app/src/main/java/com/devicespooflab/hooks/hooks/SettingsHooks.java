@@ -4,9 +4,9 @@ import android.content.ContentResolver;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class SettingsHooks {
 
@@ -21,7 +21,7 @@ public class SettingsHooks {
     private static final String BLUETOOTH_NAME = "bluetooth_name";
     private static final String DEVICE_NAME = "device_name";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         hookClass(lpparam, "android.provider.Settings$Secure",
                 SPOOF_ANDROID_ID | SPOOF_GSF_ID | SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
         hookClass(lpparam, "android.provider.Settings$System",
@@ -30,7 +30,7 @@ public class SettingsHooks {
                 SPOOF_BLUETOOTH_ADDRESS | SPOOF_DEVICE_NAMES);
     }
 
-    private static void hookClass(XC_LoadPackage.LoadPackageParam lpparam,
+    private static void hookClass(LoadPackageParam lpparam,
                                   String className,
                                   int spoofFlags) {
         Class<?> clazz = XposedHelpers.findClassIfExists(className, lpparam.classLoader);

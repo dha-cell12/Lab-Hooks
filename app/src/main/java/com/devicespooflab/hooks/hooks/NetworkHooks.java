@@ -9,24 +9,24 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class NetworkHooks {
 
     private static final String TAG = "DeviceSpoofLab-Network";
     private static final byte[] EMPTY_MAC = new byte[0];
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         hookWifiInfo(lpparam);
         hookWifiManager(lpparam);
         hookBluetoothAdapter(lpparam);
         hookNetworkInterface();
     }
 
-    private static void hookWifiInfo(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWifiInfo(LoadPackageParam lpparam) {
         Class<?> wifiInfo = XposedHelpers.findClassIfExists(
                 "android.net.wifi.WifiInfo", lpparam.classLoader);
         if (wifiInfo == null) return;
@@ -64,7 +64,7 @@ public class NetworkHooks {
         } catch (Throwable t) { logFail("WifiInfo.getSSID", t); }
     }
 
-    private static void hookWifiManager(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookWifiManager(LoadPackageParam lpparam) {
         Class<?> wm = XposedHelpers.findClassIfExists(
                 "android.net.wifi.WifiManager", lpparam.classLoader);
         if (wm == null) return;
@@ -85,7 +85,7 @@ public class NetworkHooks {
         // through WifiInfo, already covered.
     }
 
-    private static void hookBluetoothAdapter(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookBluetoothAdapter(LoadPackageParam lpparam) {
         Class<?> ba = XposedHelpers.findClassIfExists(
                 "android.bluetooth.BluetoothAdapter", lpparam.classLoader);
         if (ba == null) return;

@@ -6,17 +6,17 @@ import android.hardware.SensorManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class SensorHooks {
 
     private static final String TAG = "DeviceSpoofLab-Sensor";
     private static final String[] DENY = {"goldfish", "ranchu", "emulator", "qemu", "vbox"};
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             XposedHelpers.findAndHookMethod(SensorManager.class, "getSensorList",
                     int.class,

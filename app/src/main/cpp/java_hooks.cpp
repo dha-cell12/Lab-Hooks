@@ -18,10 +18,31 @@ void InstallJavaHooks(JNIEnv* env) {
         DS_LOGW("InstallJavaHooks: null env; skipping");
         return;
     }
-    // With hướng A the hook list lives in Java; each hooks/ class installs its
-    // own hooks via the XposedHelpers shim -> nativeHookMethod. Nothing to do
-    // here beyond confirming LSPlant is ready.
-    DS_LOGI("InstallJavaHooks: LSPlant ready; Java shim installs hooks on demand");
+    // Bridge C++ -> Java: invoke HookEntry.installAll(), which iterates the
+    // hooks/ classes and installs each one via the XposedHelpers shim ->
+    // nativeHookMethod -> lsplant::Hook.
+    jclass entryClass = env->FindClass("com/devicespooflab/hooks/HookEntry");
+    if (entryClass == nullptr) {
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        DS_LOGW("InstallJavaHooks: HookEntry class not found; Java hooks skipped");
+        return;
+    }
+    jmethodID installAll = env->GetStaticMethodID(entryClass, "installAll", "()V");
+    if (installAll == nullptr) {
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        env->DeleteLocalRef(entryClass);
+        DS_LOGW("InstallJavaHooks: HookEntry.installAll() not found; Java hooks skipped");
+        return;
+    }
+    env->CallStaticVoidMethod(entryClass, installAll);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        DS_LOGW("InstallJavaHooks: HookEntry.installAll() threw; some Java hooks may be missing");
+    } else {
+        DS_LOGI("InstallJavaHooks: HookEntry.installAll() completed");
+    }
+    env->DeleteLocalRef(entryClass);
 }
 
 }  // namespace ds

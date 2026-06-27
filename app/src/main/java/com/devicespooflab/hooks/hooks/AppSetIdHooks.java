@@ -17,10 +17,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class AppSetIdHooks {
 
@@ -30,11 +30,11 @@ public class AppSetIdHooks {
     private static final String IAPPSET_SERVICE_DESCRIPTOR =
             "com.google.android.gms.appset.internal.IAppSetService";
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         hook(lpparam, Build.VERSION.SDK_INT);
     }
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam, int realDeviceSdk) {
+    public static void hook(LoadPackageParam lpparam, int realDeviceSdk) {
         if (realDeviceSdk < MIN_SDK) {
             return;
         }
@@ -56,7 +56,7 @@ public class AppSetIdHooks {
 
     // ---- Client-side substitution ----
 
-    private static void hookClientSide(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookClientSide(LoadPackageParam lpparam) {
         Class<?> appSetIdInfoClass = XposedHelpers.findClassIfExists(
                 "com.google.android.gms.appset.AppSetIdInfo", lpparam.classLoader);
         if (appSetIdInfoClass != null) {

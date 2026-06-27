@@ -33,7 +33,6 @@ import com.devicespooflab.hooks.ui.AndroidVersionTable;
 import com.devicespooflab.hooks.ui.IdentifierItem;
 import com.devicespooflab.hooks.ui.IdentifierRegistry;
 import com.devicespooflab.hooks.utils.ConfigManager;
-import com.devicespooflab.hooks.utils.XposedServiceBridge;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.materialswitch.MaterialSwitch;

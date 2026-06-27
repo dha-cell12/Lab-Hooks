@@ -1,13 +1,13 @@
 package com.devicespooflab.hooks;
 
+import android.util.Log;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.devicespooflab.hooks.utils.ConfigManager;
-
-import de.robv.android.xposed.XposedBridge;
 
 public final class NativeHooks {
 
@@ -39,11 +39,11 @@ public final class NativeHooks {
             int n = nativeInstall(hashMap);
             installed = (n >= 0);
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                XposedBridge.log(TAG + ": nativeInstall returned " + n);
+                Log.i(TAG, "nativeInstall returned " + n);
             }
             return installed;
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": nativeInstall threw: " + t);
+            Log.w(TAG, "nativeInstall threw", t);
             return false;
         }
     }
@@ -86,18 +86,18 @@ public final class NativeHooks {
         // set of known absolute paths. Runs during app startup; no filesystem walk.
         String absPath = locateLibraryOnDisk();
         if (absPath == null) {
-            XposedBridge.log(TAG + ": could not locate " + LIB_NAME + " .so");
+            Log.w(TAG, "could not locate " + LIB_NAME + " .so");
             return false;
         }
         try {
             System.load(absPath);
             libraryLoaded = true;
             if (ConfigManager.isVerboseLoggingEnabled()) {
-                XposedBridge.log(TAG + ": loaded native lib via System.load(" + absPath + ")");
+                Log.i(TAG, "loaded native lib via System.load(" + absPath + ")");
             }
             return true;
         } catch (Throwable t) {
-            XposedBridge.log(TAG + ": System.load(" + absPath + ") failed: " + t);
+            Log.w(TAG, "System.load(" + absPath + ") failed", t);
             return false;
         }
     }

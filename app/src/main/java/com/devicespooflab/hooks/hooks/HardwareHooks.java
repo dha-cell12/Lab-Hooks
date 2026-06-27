@@ -10,10 +10,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import com.devicespooflab.hooks.xposed.XC_MethodHook;
+import com.devicespooflab.hooks.xposed.XposedBridge;
+import com.devicespooflab.hooks.xposed.XposedHelpers;
+import com.devicespooflab.hooks.xposed.LoadPackageParam;
 
 public class HardwareHooks {
 
@@ -23,7 +23,7 @@ public class HardwareHooks {
     private static final Set<Class<?>> HOOKED_ACTIVITY_MANAGER_CLASSES =
             Collections.newSetFromMap(new ConcurrentHashMap<Class<?>, Boolean>());
 
-    public static void hook(XC_LoadPackage.LoadPackageParam lpparam) {
+    public static void hook(LoadPackageParam lpparam) {
         try {
             hookRuntimeCores();
             hookActivityManagerMemory(lpparam);
@@ -54,7 +54,7 @@ public class HardwareHooks {
         }
     }
 
-    private static void hookActivityManagerMemory(XC_LoadPackage.LoadPackageParam lpparam) {
+    private static void hookActivityManagerMemory(LoadPackageParam lpparam) {
         try {
             Class<?> activityManagerClass = XposedHelpers.findClassIfExists(
                 "android.app.ActivityManager", lpparam.classLoader);
