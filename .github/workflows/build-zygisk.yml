@@ -1,0 +1,73 @@
+name: Build Zygisk Module
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build native libraries (all ABIs)
+        run: ./gradlew externalNativeBuildRelease
+
+      - name: Assemble Zygisk module ZIP
+        run: |
+          set -eu
+          MODULE_DIR=module
+          OUT_DIR=build/zygisk-module
+          rm -rf "$OUT_DIR"
+          mkdir -p "$OUT_DIR/zygisk"
+
+          # Copy the static module skeleton (module.prop, customize.sh).
+          cp "$MODULE_DIR/module.prop" "$OUT_DIR/"
+          cp "$MODULE_DIR/customize.sh" "$OUT_DIR/"
+
+          # Map each built ABI .so to the Zygisk per-ABI filename.
+          # NDK build output lives under app/build/intermediates/cxx/.../obj/<abi>/.
+          OBJ_ROOT=$(find app/build/intermediates/cxx -type d -name obj | head -n1)
+          if [ -z "$OBJ_ROOT" ]; then
+            echo "Native obj dir not found" >&2
+            exit 1
+          fi
+          echo "Using obj root: $OBJ_ROOT"
+
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            so="$OBJ_ROOT/$abi/libds_native.so"
+            if [ -f "$so" ]; then
+              cp "$so" "$OUT_DIR/zygisk/$abi.so"
+              echo "Packaged $abi"
+            else
+              echo "WARNING: missing $so" >&2
+            fi
+          done
+
+          # Zip the module (contents at archive root, not nested).
+          ( cd "$OUT_DIR" && zip -r9 ../DeviceSpoofLabs-Hooks-Zygisk.zip . )
+          echo "Module zip created at build/DeviceSpoofLabs-Hooks-Zygisk.zip"
+
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeviceSpoofLabs-Hooks-Zygisk
+          path: build/DeviceSpoofLabs-Hooks-Zygisk.zip
+          if-no-files-found: error

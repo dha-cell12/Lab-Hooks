@@ -1,0 +1,6 @@
+id=devicespooflab_hooks
+name=DeviceSpoofLabs-Hooks
+version=v1.2-zygisk
+versionCode=4
+author=DeviceSpoofLab
+description=Zygisk module for runtime device-identifier spoofing (IMEI, serial, build fingerprint, GAID, MAC, etc.). Standalone, no LSPosed dependency.

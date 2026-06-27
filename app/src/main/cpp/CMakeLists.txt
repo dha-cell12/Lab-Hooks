@@ -12,6 +12,8 @@ add_library(ds_native SHARED
     property_hooks.cpp
     system_hooks.cpp
     dlopen_hook.cpp
+    zygisk_entry.cpp
+    companion.cpp
 )
 
 target_link_libraries(ds_native
