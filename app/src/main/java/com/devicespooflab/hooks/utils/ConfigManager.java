@@ -35,7 +35,17 @@ public class ConfigManager {
         "/data/data/com.devicespooflab.hooks/files/device_profile.conf",
     };
 
+    // Scope list: one target package name per line. Stored separately from the
+    // spoof profile so the companion can read it independently and cheaply at
+    // app-specialize time. Mirrors the path the companion reads.
+    private static final String SCOPE_FILE_NAME = "scope.list";
+
     private static volatile Map<String, String> allProperties = null;
+
+    // In-memory scope, kept distinct from allProperties because a package name
+    // is not a spoof identifier. Backed by scope.list on disk.
+    private static volatile java.util.List<String> scopePackages =
+            new java.util.ArrayList<>();
 
     private static volatile String cachedIMEI = null;
     private static volatile String cachedMEID = null;
@@ -129,19 +139,19 @@ public class ConfigManager {
     }
 
     public static synchronized boolean loadFromRemotePreferences() {
-        // libxposed:service memoizes RemotePreferences per group, so the fresh
-        // variant is required both for startup load and for refresh-poll reload.
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferencesFresh("config");
-        if (prefs == null) return false;
+        // Companion is the single source of truth: the profile arrives in the
+        // native layer (companion -> g_props) and we read it back through
+        // NativeHooks.getAllFromNative(). This replaces the old
+        // RemotePreferences path while keeping the same merge-with-defaults
+        // and cache-reset semantics.
         try {
-            Map<String, ?> raw = prefs.getAll();
+            Map<String, String> raw = NativeHooks.getAllFromNative();
             if (raw == null || raw.isEmpty()) return false;
             Map<String, String> result = new HashMap<>(raw.size());
-            for (Map.Entry<String, ?> e : raw.entrySet()) {
+            for (Map.Entry<String, String> e : raw.entrySet()) {
                 if (e.getKey() == null) continue;
-                Object v = e.getValue();
-                result.put(e.getKey(), v == null ? "" : v.toString());
+                String v = e.getValue();
+                result.put(e.getKey(), v == null ? "" : v);
             }
             Map<String, String> defaults = getEmbeddedDefaults();
             for (Map.Entry<String, String> e : defaults.entrySet()) {
@@ -152,7 +162,7 @@ public class ConfigManager {
             resetCaches();
             allProperties = Collections.unmodifiableMap(result);
             android.util.Log.i("DeviceSpoofLab",
-                    "Loaded " + result.size() + " properties from RemotePreferences");
+                    "Loaded " + result.size() + " properties from native companion profile");
             return true;
         } catch (Throwable t) {
             android.util.Log.w("DeviceSpoofLab",
@@ -162,77 +172,13 @@ public class ConfigManager {
         }
     }
 
+    // No-op since the move off LSPosed: the UI now writes device_profile.conf
+    // directly and the root companion reads it back, so there is no
+    // RemotePreferences channel to publish to. Kept as a stub so existing
+    // callers (e.g. MainActivity.publishIfWritable) stay valid; scheduled for
+    // removal in the cleanup phase along with XposedServiceBridge.
     public static synchronized boolean publishToRemotePreferences() {
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferences("config");
-        if (prefs == null) return false;
-        try {
-            if (allProperties == null) init();
-            String generation = String.valueOf(System.currentTimeMillis());
-            android.content.SharedPreferences.Editor editor = prefs.edit().clear();
-            for (Map.Entry<String, String> e : allProperties.entrySet()) {
-                String k = e.getKey();
-                if (k == null) continue;
-                editor.putString(k, e.getValue() == null ? "" : e.getValue());
-            }
-            editor.putString(REMOTE_GENERATION_KEY, generation);
-            boolean ok = editor.commit();
-            if (ok) {
-                Map<String, String> mutable = new HashMap<>(allProperties);
-                mutable.put(REMOTE_GENERATION_KEY, generation);
-                allProperties = Collections.unmodifiableMap(mutable);
-            }
-            android.util.Log.i("DeviceSpoofLab",
-                    "publishToRemotePreferences commit=" + ok
-                            + " entries=" + allProperties.size()
-                            + " generation=" + generation);
-            return ok;
-        } catch (Throwable t) {
-            android.util.Log.w("DeviceSpoofLab",
-                    "publishToRemotePreferences failed: " + t.getClass().getSimpleName()
-                            + ": " + t.getMessage());
-            return false;
-        }
-    }
-
-    // Cross-process freshness marker stamped on each publish; target processes
-    // compare it against their in-memory copy to detect new edits.
-    private static final String REMOTE_GENERATION_KEY = "_generation";
-
-    public static String getLocalRemoteGeneration() {
-        Map<String, String> props = allProperties;
-        if (props == null) return null;
-        return props.get(REMOTE_GENERATION_KEY);
-    }
-
-    public static boolean refreshFromRemoteIfNewer(ClassLoader loader) {
-        android.content.SharedPreferences prefs =
-                XposedServiceBridge.getRemotePreferencesFresh("config");
-        if (prefs == null) return false;
-        String remoteGen;
-        try {
-            remoteGen = prefs.getString(REMOTE_GENERATION_KEY, null);
-        } catch (Throwable t) {
-            return false;
-        }
-        if (remoteGen == null || remoteGen.isEmpty()) return false;
-        String localGen = getLocalRemoteGeneration();
-        if (remoteGen.equals(localGen)) return false;
-        boolean reloaded = loadFromRemotePreferences();
-        if (reloaded) {
-            if (loader != null) {
-                try {
-                    com.devicespooflab.hooks.hooks.BuildHooks.refreshStaticFields(loader);
-                } catch (Throwable t) {
-                    android.util.Log.w("DeviceSpoofLab",
-                            "BuildHooks.refreshStaticFields during refresh failed: "
-                                    + t.getMessage());
-                }
-            }
-            android.util.Log.i("DeviceSpoofLab",
-                    "Remote config refreshed: " + localGen + " -> " + remoteGen);
-        }
-        return reloaded;
+        return false;
     }
 
     private static void resetCaches() {
@@ -1383,6 +1329,76 @@ public class ConfigManager {
             throw new IOException("Failed to rename " + tmp + " to " + target);
         }
         target.setReadable(true, false);
+    }
+
+    // ---- Scope management ----
+
+    public static synchronized java.util.List<String> getScopePackages() {
+        return new java.util.ArrayList<>(scopePackages);
+    }
+
+    // Replace the in-memory scope with a sanitized copy: trimmed, de-duplicated,
+    // blank/comment lines dropped, original order preserved.
+    public static synchronized void setScopePackages(java.util.List<String> packages) {
+        java.util.LinkedHashSet<String> cleaned = new java.util.LinkedHashSet<>();
+        if (packages != null) {
+            for (String p : packages) {
+                if (p == null) continue;
+                String t = p.trim();
+                if (t.isEmpty() || t.startsWith("#")) continue;
+                cleaned.add(t);
+            }
+        }
+        scopePackages = new java.util.ArrayList<>(cleaned);
+    }
+
+    // Writes scope.list next to device_profile.conf using the same atomic
+    // temp->rename->world-readable pattern as saveConfig, so the root companion
+    // can read it from the app sandbox.
+    public static synchronized void saveScopeList(File filesDir) throws IOException {
+        File target = new File(filesDir, SCOPE_FILE_NAME);
+        File parent = target.getParentFile();
+        if (parent != null && !parent.exists()) parent.mkdirs();
+        File tmp = new File(parent, SCOPE_FILE_NAME + ".tmp");
+        StringBuilder sb = new StringBuilder();
+        sb.append("# Target packages to spoof. One package name per line.\n");
+        sb.append("# Lines starting with # are comments.\n");
+        for (String pkg : scopePackages) {
+            sb.append(pkg).append('\n');
+        }
+        try (FileOutputStream fos = new FileOutputStream(tmp)) {
+            fos.write(sb.toString().getBytes());
+            fos.flush();
+            try { fos.getFD().sync(); } catch (Exception ignored) {}
+        }
+        if (target.exists() && !target.delete()) {
+            throw new IOException("Failed to remove existing " + target);
+        }
+        if (!tmp.renameTo(target)) {
+            throw new IOException("Failed to rename " + tmp + " to " + target);
+        }
+        target.setReadable(true, false);
+    }
+
+    // Loads scope.list from disk into memory if present. Safe to call on every
+    // app start; silently no-ops when the file is absent.
+    public static synchronized void loadScopeList(File filesDir) {
+        File target = new File(filesDir, SCOPE_FILE_NAME);
+        if (!target.exists() || !target.canRead()) return;
+        java.util.List<String> loaded = new java.util.ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(target))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String t = line.trim();
+                if (t.isEmpty() || t.startsWith("#")) continue;
+                loaded.add(t);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("DeviceSpoofLab",
+                    "loadScopeList failed: " + e.getMessage());
+            return;
+        }
+        setScopePackages(loaded);
     }
 
     public static synchronized void reload() {

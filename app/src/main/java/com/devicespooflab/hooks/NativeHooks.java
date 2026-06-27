@@ -23,6 +23,8 @@ public final class NativeHooks {
 
     private static native String nativeQuery(String key);
 
+    private static native java.util.HashMap<String, String> nativeGetAll();
+
     public static synchronized boolean tryInstall(Map<String, String> props) {
         if (installed) {
             return true;
@@ -52,6 +54,21 @@ public final class NativeHooks {
             return nativeQuery(key);
         } catch (Throwable t) {
             return null;
+        }
+    }
+
+    // Returns the full companion-sourced profile from the native layer, or an
+    // empty map if the library isn't loaded or the call fails. Lets the Java
+    // config layer treat native g_props as the single source of truth.
+    public static java.util.HashMap<String, String> getAllFromNative() {
+        if (!loadLibrary()) {
+            return new java.util.HashMap<>();
+        }
+        try {
+            java.util.HashMap<String, String> all = nativeGetAll();
+            return all != null ? all : new java.util.HashMap<>();
+        } catch (Throwable t) {
+            return new java.util.HashMap<>();
         }
     }
 

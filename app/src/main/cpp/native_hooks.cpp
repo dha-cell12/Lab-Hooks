@@ -127,3 +127,31 @@ Java_com_devicespooflab_hooks_NativeHooks_nativeQuery(
     if (!found) return nullptr;
     return env->NewStringUTF(out.c_str());
 }
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_devicespooflab_hooks_NativeHooks_nativeGetAll(
+        JNIEnv* env, jclass /*cls*/) {
+    // Build a java.util.HashMap mirroring g_props so the Java layer can read
+    // the companion-sourced profile as a single source of truth.
+    jclass mapCls = env->FindClass("java/util/HashMap");
+    if (mapCls == nullptr) return nullptr;
+    jmethodID ctor = env->GetMethodID(mapCls, "<init>", "()V");
+    jmethodID putMID = env->GetMethodID(
+        mapCls, "put",
+        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+    if (ctor == nullptr || putMID == nullptr) return nullptr;
+
+    jobject map = env->NewObject(mapCls, ctor);
+    if (map == nullptr) return nullptr;
+
+    for (const auto& kv : ds::g_props) {
+        jstring k = env->NewStringUTF(kv.first.c_str());
+        jstring v = env->NewStringUTF(kv.second.c_str());
+        if (k != nullptr && v != nullptr) {
+            env->CallObjectMethod(map, putMID, k, v);
+        }
+        if (k != nullptr) env->DeleteLocalRef(k);
+        if (v != nullptr) env->DeleteLocalRef(v);
+    }
+    return map;
+}

@@ -20,6 +20,13 @@
     <string name="timezone_label">Timezone</string>
     <string name="timezone_dialog_title">Select timezone</string>
     <string name="timezone_search_hint">Search…</string>
+    <string name="scope_label">Target apps (scope)</string>
+    <string name="scope_summary_empty">No apps selected — tap to add</string>
+    <string name="scope_summary_count">%1$d app(s) selected</string>
+    <string name="scope_dialog_title">Target packages</string>
+    <string name="scope_dialog_hint">One package name per line\ne.g. com.example.app</string>
+    <string name="scope_saved_restart_hint">Scope saved. Force-stop the target app for changes to take effect.</string>
+    <string name="config_saved_restart_hint">Saved. Force-stop the target app for changes to take effect.</string>
 
     <!-- Populates the "Recommended" section in LSPosed Manager's scope picker.
          The module's own process does NOT need to be ticked: the writable

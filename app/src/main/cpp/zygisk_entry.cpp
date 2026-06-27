@@ -46,6 +46,10 @@ public:
     void onLoad(Api* api, JNIEnv* env) override {
         api_ = api;
         env_ = env;
+        // JNIEnv is thread-bound; the JavaVM is process-stable. Cache the VM so
+        // we can fetch the calling thread's JNIEnv at hook time instead of
+        // reusing this (possibly stale, wrong-thread) env_.
+        if (env != nullptr) env->GetJavaVM(&vm_);
     }
 
     void preAppSpecialize(AppSpecializeArgs* args) override {
@@ -131,6 +135,7 @@ public:
 private:
     Api* api_ = nullptr;
     JNIEnv* env_ = nullptr;
+    JavaVM* vm_ = nullptr;
     bool should_spoof_ = false;
     std::unordered_map<std::string, std::string> profile_;
 
@@ -151,7 +156,23 @@ private:
         // hooks that were previously driven through JNI nativeInstall().
         ds::g_props = std::move(profile_);
         ds::InstallPropertyHooks();
-        // LSPlant-based Java hooking is wired up in a later phase.
+
+        // Initialize LSPlant for Java method hooking. JNIEnv is thread-bound,
+        // so fetch the calling thread's env from the process-stable JavaVM
+        // rather than reusing the cached onLoad env_.
+        if (vm_ != nullptr) {
+            JNIEnv* env = nullptr;
+            if (vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6)
+                    == JNI_OK && env != nullptr) {
+                if (ds::InitLSPlant(env)) {
+                    ds::InstallJavaHooks(env);
+                }
+            } else {
+                DS_LOGW("applyProfileAndHook: no JNIEnv for current thread");
+            }
+        } else {
+            DS_LOGW("applyProfileAndHook: JavaVM unavailable; Java hooks skipped");
+        }
     }
 };
 

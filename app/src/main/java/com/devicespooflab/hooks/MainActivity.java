@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
         configFile = new File(getFilesDir(), "device_profile.conf");
         ensureConfigFile();
         ConfigManager.reload();
+        ConfigManager.loadScopeList(getFilesDir());
         populateMissingValues();
         schedulePersist();
 
@@ -113,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
         wireAndroidVersionStepper();
         populateTimezoneIfMissing();
         wireTimezonePicker();
+        wireScopePicker();
         wireRandomizeAll();
         buildSections();
 
@@ -229,6 +231,59 @@ public class MainActivity extends AppCompatActivity {
         if (timezoneValue == null) return;
         String tz = ConfigManager.getRawProperty(TIMEZONE_PROPERTY);
         timezoneValue.setText(tz == null || tz.isEmpty() ? "—" : tz);
+    }
+
+    private TextView scopeSummary;
+
+    private void wireScopePicker() {
+        View card = findViewById(R.id.scope_card);
+        scopeSummary = findViewById(R.id.scope_summary);
+        renderScopeSummary();
+        card.setOnClickListener(v -> showScopeDialog());
+    }
+
+    private void renderScopeSummary() {
+        if (scopeSummary == null) return;
+        int count = ConfigManager.getScopePackages().size();
+        scopeSummary.setText(count == 0
+                ? getString(R.string.scope_summary_empty)
+                : getString(R.string.scope_summary_count, count));
+    }
+
+    private void showScopeDialog() {
+        EditText input = new EditText(this);
+        input.setTypeface(Typeface.MONOSPACE);
+        input.setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
+        input.setMinLines(6);
+        input.setHint(R.string.scope_dialog_hint);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        StringBuilder sb = new StringBuilder();
+        for (String pkg : ConfigManager.getScopePackages()) {
+            sb.append(pkg).append('\n');
+        }
+        input.setText(sb.toString());
+
+        FrameLayout container = new FrameLayout(this);
+        int padH = (int) dpToPx(20);
+        int padV = (int) dpToPx(8);
+        container.setPadding(padH, padV, padH, padV);
+        container.addView(input);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.scope_dialog_title)
+                .setView(container)
+                .setPositiveButton(R.string.dialog_save, (d, w) -> {
+                    String[] lines = input.getText().toString().split("\\n");
+                    java.util.List<String> pkgs = new ArrayList<>();
+                    for (String line : lines) pkgs.add(line);
+                    ConfigManager.setScopePackages(pkgs);
+                    schedulePersist();
+                    renderScopeSummary();
+                    Toast.makeText(this, R.string.scope_saved_restart_hint, Toast.LENGTH_LONG).show();
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show();
     }
 
     private void showTimezonePicker() {
@@ -497,6 +552,13 @@ public class MainActivity extends AppCompatActivity {
     private void doPersist() {
         try {
             ConfigManager.saveConfig(configFile);
+        } catch (IOException e) {
+            runOnUiThread(() -> Toast.makeText(this,
+                    getString(R.string.save_failed, e.getMessage()),
+                    Toast.LENGTH_LONG).show());
+        }
+        try {
+            ConfigManager.saveScopeList(getFilesDir());
         } catch (IOException e) {
             runOnUiThread(() -> Toast.makeText(this,
                     getString(R.string.save_failed, e.getMessage()),

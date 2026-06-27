@@ -26,4 +26,9 @@ void InstallSystemHooks(dev_t dev, ino_t inode);
 // Re-applies LSPlt on .so files loaded after the initial install.
 void InstallDlopenHooks(dev_t dev, ino_t inode);
 
+// Initializes LSPlant with Dobby as the inline-hook backend. Must be called
+// once per process with a valid JNIEnv before any Java method hook. Returns
+// true on success; safe to call multiple times (subsequent calls are no-ops).
+bool InitLSPlant(JNIEnv* env);
+
 }  // namespace ds

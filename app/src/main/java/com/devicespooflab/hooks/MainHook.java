@@ -78,11 +78,12 @@ public class MainHook implements IXposedHookLoadPackage {
                     if (loaded) {
                         BuildHooks.refreshStaticFields(lpparam.classLoader);
                     }
-                    // Vector's read-only RemotePreferences caches a frozen
-                    // snapshot at construction and never fires the change
-                    // listener for daemon writes, so we poll _generation.
-                    installRemoteRefreshLoop(lpparam.classLoader);
-                    Log.i(TAG, "RemotePreferences load=" + loaded
+                    // Live-update at runtime is intentionally not supported:
+                    // the companion can only be reached from pre-specialize, so
+                    // config edits take effect on the target's next launch.
+                    // See docs/live-update-design.md (Huớng E) for the
+                    // restart-free approach deferred for later.
+                    Log.i(TAG, "Companion profile load=" + loaded
                             + " imei=" + ConfigManager.getIdentifierValue("imei")
                             + " gaid=" + ConfigManager.getIdentifierValue("gaid"));
                 }
@@ -315,40 +316,6 @@ public class MainHook implements IXposedHookLoadPackage {
     private static void logInfo(boolean verbose, String message) {
         if (verbose) {
             XposedBridge.log(message);
-        }
-    }
-
-    private static final long REFRESH_INTERVAL_MS = 2_000L;
-    private static final java.util.concurrent.atomic.AtomicBoolean sRefreshInstalled =
-            new java.util.concurrent.atomic.AtomicBoolean(false);
-    private static android.os.HandlerThread sRefreshThread;
-    private static android.os.Handler sRefreshHandler;
-
-    private static void installRemoteRefreshLoop(final ClassLoader classLoader) {
-        if (!sRefreshInstalled.compareAndSet(false, true)) return;
-        try {
-            sRefreshThread = new android.os.HandlerThread("spoof-refresh",
-                    android.os.Process.THREAD_PRIORITY_BACKGROUND);
-            sRefreshThread.start();
-            sRefreshHandler = new android.os.Handler(sRefreshThread.getLooper());
-            final Runnable tick = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        ConfigManager.refreshFromRemoteIfNewer(classLoader);
-                    } catch (Throwable t) {
-                        Log.w(TAG, "Remote refresh tick failed: " + t.getMessage());
-                    } finally {
-                        sRefreshHandler.postDelayed(this, REFRESH_INTERVAL_MS);
-                    }
-                }
-            };
-            sRefreshHandler.postDelayed(tick, REFRESH_INTERVAL_MS);
-            Log.i(TAG, "Remote refresh loop installed (interval="
-                    + REFRESH_INTERVAL_MS + "ms)");
-        } catch (Throwable t) {
-            sRefreshInstalled.set(false);
-            Log.w(TAG, "installRemoteRefreshLoop failed: " + t.getMessage());
         }
     }
 }
