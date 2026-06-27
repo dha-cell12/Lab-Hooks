@@ -79,18 +79,6 @@ public class MainActivity extends AppCompatActivity {
     });
     private final Runnable persistRunnable = () -> persistExecutor.execute(this::doPersist);
 
-    // Fired by XposedServiceBridge once the writable IXposedService binder is
-    // bound (or replayed from cache). Hop onto persistExecutor so the binder
-    // commit never runs on the bind callback's thread (which may be the main
-    // thread when the binder was already cached at onCreate time).
-    private final Runnable onServiceReady = () -> {
-        try {
-            persistExecutor.execute(this::publishIfWritable);
-        } catch (RejectedExecutionException ignored) {
-            // Activity is tearing down; the next launch republishes on bind.
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -133,12 +121,6 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         silentSetSelectAll(allEnabled());
-
-        // Register for the writable IXposedService binder. Vector delivers it to
-        // our manifest-declared XposedProvider when this UID starts, regardless
-        // of LSPosed hook scope, so the UI can publish edits straight to
-        // RemotePreferences without scoping the module to its own process.
-        XposedServiceBridge.init(this, onServiceReady);
     }
 
     @Override
@@ -573,12 +555,9 @@ public class MainActivity extends AppCompatActivity {
         publishIfWritable();
     }
 
-    // Publishes the in-memory config to RemotePreferences when the writable
-    // binder is bound; a no-op otherwise. Always invoked on persistExecutor.
+    // RemotePreferences was removed along with LSPosed; the native companion
+    // reads device_profile.conf directly, so this is now a no-op.
     private void publishIfWritable() {
-        if (XposedServiceBridge.isServiceWritable()) {
-            ConfigManager.publishToRemotePreferences();
-        }
     }
 
     private void makePrefsWorldReadable() {
