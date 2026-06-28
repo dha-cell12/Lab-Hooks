@@ -61,6 +61,18 @@ android {
             useLegacyPackaging = false
         }
     }
+
+    sourceSets {
+        getByName("main") {
+            java {
+                // Xposed/LSPosed entry points are kept in-tree for reference
+                // but excluded from the standalone Zygisk build, which does
+                // not depend on the Xposed framework JARs.
+                exclude("com/devicespooflab/hooks/MainHook.java")
+                exclude("com/devicespooflab/hooks/XposedModuleImpl.java")
+            }
+        }
+    }
 }
 
 dependencies {

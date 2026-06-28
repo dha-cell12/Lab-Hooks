@@ -89,4 +89,37 @@ public abstract class XC_MethodHook {
     public final void callAfter(MethodHookParam param) throws Throwable {
         afterHookedMethod(param);
     }
+
+    // Token returned by XposedHelpers.findAndHookMethod / hookAllMethods to
+    // allow callers to undo a previously installed hook. The LSPlant-backed
+    // shim should populate `lsplantBackup` so unhook() can delegate to the
+    // native unhooker.
+    public class Unhook {
+        private final Member hookedMethod;
+        private volatile boolean active = true;
+        // Backup Method returned by LSPlant; opaque to callers.
+        public Object lsplantBackup;
+
+        public Unhook(Member hookedMethod) {
+            this.hookedMethod = hookedMethod;
+        }
+
+        public Member getHookedMethod() {
+            return hookedMethod;
+        }
+
+        public XC_MethodHook getCallback() {
+            return XC_MethodHook.this;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        // Subclasses / the LSPlant glue can override the actual removal logic;
+        // by default this just flips the active flag.
+        public synchronized void unhook() {
+            active = false;
+        }
+    }
 }
