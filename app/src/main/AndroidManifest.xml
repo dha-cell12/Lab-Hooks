@@ -16,33 +16,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Authority must match <applicationId>.XposedService
-             (io.github.libxposed.service.IXposedService.AUTHORITY_SUFFIX). -->
-        <provider
-            android:name="io.github.libxposed.service.XposedProvider"
-            android:authorities="com.devicespooflab.hooks.XposedService"
-            android:exported="true" />
-
-        <meta-data
-            android:name="xposedmodule"
-            android:value="true" />
-
-        <meta-data
-            android:name="xposeddescription"
-            android:value="@string/xposed_description" />
-
-        <meta-data
-            android:name="xposedminversion"
-            android:value="82" />
-
-        <!-- Semicolon-separated string instead of @array resource. Vector's
-             parasitic Manager (running inside com.android.shell) fails on
-             getResourcesForApplication for some packages, which silently
-             swallows the resource-array path; the string path always works. -->
-        <meta-data
-            android:name="xposedscope"
-            android:value="com.google.android.gms" />
-
     </application>
 
 </manifest>
