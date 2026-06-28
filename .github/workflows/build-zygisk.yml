@@ -27,8 +27,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build native libraries (all ABIs)
-        run: ./gradlew externalNativeBuildRelease
+      - name: Build APK + native libraries (all ABIs)
+        run: ./gradlew assembleRelease
 
       - name: Assemble Zygisk module ZIP
         run: |
@@ -37,13 +37,17 @@ jobs:
           OUT_DIR=build/zygisk-module
           rm -rf "$OUT_DIR"
           mkdir -p "$OUT_DIR/zygisk"
+          mkdir -p "$OUT_DIR/system/priv-app/DeviceSpoofLab"
 
-          # Copy the static module skeleton (module.prop, customize.sh).
-          cp "$MODULE_DIR/module.prop" "$OUT_DIR/"
-          cp "$MODULE_DIR/customize.sh" "$OUT_DIR/"
+          # Copy the static module skeleton (module.prop, customize.sh, scripts).
+          cp "$MODULE_DIR/module.prop"     "$OUT_DIR/"
+          cp "$MODULE_DIR/customize.sh"    "$OUT_DIR/"
+          [ -f "$MODULE_DIR/post-fs-data.sh" ] && cp "$MODULE_DIR/post-fs-data.sh" "$OUT_DIR/"
+          [ -f "$MODULE_DIR/service.sh" ]     && cp "$MODULE_DIR/service.sh"     "$OUT_DIR/"
+          [ -f "$MODULE_DIR/uninstall.sh" ]   && cp "$MODULE_DIR/uninstall.sh"   "$OUT_DIR/"
+          [ -f "$MODULE_DIR/sepolicy.rule" ]  && cp "$MODULE_DIR/sepolicy.rule"  "$OUT_DIR/"
 
           # Map each built ABI .so to the Zygisk per-ABI filename.
-          # NDK build output lives under app/build/intermediates/cxx/.../obj/<abi>/.
           OBJ_ROOT=$(find app/build/intermediates/cxx -type d -name obj | head -n1)
           if [ -z "$OBJ_ROOT" ]; then
             echo "Native obj dir not found" >&2
@@ -61,6 +65,16 @@ jobs:
             fi
           done
 
+          # Bundle the release APK as a privileged system app so the companion UI
+          # is available out-of-the-box after flashing the module.
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
+          if [ -z "$APK" ]; then
+            echo "Release APK not found" >&2
+            exit 1
+          fi
+          cp "$APK" "$OUT_DIR/system/priv-app/DeviceSpoofLab/DeviceSpoofLab.apk"
+          echo "Packaged APK: $APK"
+
           # Zip the module (contents at archive root, not nested).
           ( cd "$OUT_DIR" && zip -r9 ../DeviceSpoofLabs-Hooks-Zygisk.zip . )
           echo "Module zip created at build/DeviceSpoofLabs-Hooks-Zygisk.zip"
@@ -70,4 +84,11 @@ jobs:
         with:
           name: DeviceSpoofLabs-Hooks-Zygisk
           path: build/DeviceSpoofLabs-Hooks-Zygisk.zip
+          if-no-files-found: error
+
+      - name: Upload standalone APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeviceSpoofLabs-APK
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
