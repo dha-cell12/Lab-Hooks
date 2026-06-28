@@ -89,10 +89,17 @@ public class ConfigManager {
     @SuppressWarnings("unchecked")
     private static Map<String, String> readXSharedPreferences() {
         try {
-            ClassLoader bridgeLoader = de.robv.android.xposed.XposedBridge.class.getClassLoader();
-            Class<?> xprefsClass = bridgeLoader == null
-                    ? Class.forName("de.robv.android.xposed.XSharedPreferences")
-                    : Class.forName("de.robv.android.xposed.XSharedPreferences", true, bridgeLoader);
+            // XSharedPreferences belongs to the Xposed framework, which is not
+            // present in the standalone Zygisk build. Resolve reflectively from
+            // the current classloader; returns null if the class is missing.
+            Class<?> xprefsClass;
+            try {
+                xprefsClass = Class.forName("de.robv.android.xposed.XSharedPreferences");
+            } catch (ClassNotFoundException cnf) {
+                android.util.Log.i("DeviceSpoofLab",
+                        "XSharedPreferences unavailable (Zygisk standalone build)");
+                return null;
+            }
             Object prefs = xprefsClass
                     .getConstructor(String.class, String.class)
                     .newInstance("com.devicespooflab.hooks", "config");
