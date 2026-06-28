@@ -161,9 +161,8 @@ public final class XposedServiceBridge {
                         + ": " + t.getMessage());
             }
         }
-        if (sNewApiAvailable.get()) {
-            return XposedModuleImpl.fetchRemotePreferences(groupName);
-        }
+        // XposedModuleImpl entry-point is excluded from the standalone Zygisk
+        // build; the libxposed-api fallback is unavailable here.
         return null;
     }
 

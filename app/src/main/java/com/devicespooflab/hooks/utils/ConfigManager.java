@@ -1,5 +1,6 @@
 package com.devicespooflab.hooks.utils;
 
+import com.devicespooflab.hooks.NativeHooks;
 import com.devicespooflab.hooks.ui.IdentifierRegistry;
 
 import java.io.BufferedReader;

@@ -36,7 +36,7 @@ public class AdvertisingIdHooks {
     private static final AtomicBoolean sGetIdHooked = new AtomicBoolean(false);
     private static final AtomicBoolean sAttachIfaceHooked = new AtomicBoolean(false);
 
-    private static final List<XC_MethodHook.Unhook> sWatcherUnhooks = new ArrayList<>();
+    private static final List<XposedBridge.Unhook> sWatcherUnhooks = new ArrayList<>();
     private static final AtomicBoolean sWatcherRetired = new AtomicBoolean(false);
     private static volatile long sWatcherDeadlineNanos = 0L;
     private static final long WATCHER_BUDGET_NANOS = 120_000_000_000L;
@@ -192,7 +192,7 @@ public class AdvertisingIdHooks {
         sWatcherDeadlineNanos = System.nanoTime() + WATCHER_BUDGET_NANOS;
         try {
             Class<?> baseDex = Class.forName("dalvik.system.BaseDexClassLoader");
-            XC_MethodHook.Unhook u = XposedHelpers.findAndHookMethod(
+            XposedBridge.Unhook u = XposedHelpers.findAndHookMethod(
                     baseDex, "findClass", String.class, watcher);
             synchronized (sWatcherUnhooks) {
                 sWatcherUnhooks.add(u);
@@ -245,7 +245,7 @@ public class AdvertisingIdHooks {
     private static void removeWatchers() {
         if (!sWatcherRetired.compareAndSet(false, true)) return;
         synchronized (sWatcherUnhooks) {
-            for (XC_MethodHook.Unhook u : sWatcherUnhooks) {
+            for (XposedBridge.Unhook u : sWatcherUnhooks) {
                 try { u.unhook(); } catch (Throwable ignored) {}
             }
             sWatcherUnhooks.clear();
