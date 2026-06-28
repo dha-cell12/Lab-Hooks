@@ -18,8 +18,9 @@ set(DOBBY_BUILD_TEST OFF CACHE BOOL "" FORCE)
 set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     dobby
-    GIT_REPOSITORY https://github.com/jmpews/Dobby.git
-    GIT_TAG 9963b83302bd5d7a09d6217492c14edf32a7c6da
+    GIT_REPOSITORY https://github.com/LSPosed/Dobby.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(dobby)
 
