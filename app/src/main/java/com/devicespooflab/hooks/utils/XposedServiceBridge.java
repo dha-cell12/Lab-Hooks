@@ -4,8 +4,6 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.devicespooflab.hooks.XposedModuleImpl;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -132,9 +130,8 @@ public final class XposedServiceBridge {
                         + t.getClass().getSimpleName() + ": " + t.getMessage());
             }
         }
-        if (sNewApiAvailable.get()) {
-            return XposedModuleImpl.fetchRemotePreferences(groupName);
-        }
+        // XposedModuleImpl entry-point is excluded from the standalone Zygisk
+        // build; the libxposed-api fallback is unavailable here.
         return null;
     }
 
