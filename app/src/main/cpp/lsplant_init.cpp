@@ -212,7 +212,7 @@ bool g_init_result = false;
 // function pointer, or nullptr on failure.
 void* InlineHooker(void* target, void* replace) {
     void* origin = nullptr;
-    if (DobbyHook(target, replace, &origin) == 0) {
+    if (DobbyHook(target, reinterpret_cast<dobby_dummy_func_t>(replace), reinterpret_cast<dobby_dummy_func_t*>(&origin)) == 0) {
         return origin;
     }
     return nullptr;
