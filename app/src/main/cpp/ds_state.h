@@ -3,6 +3,8 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <sys/types.h>
+#include <jni.h>
 #include <android/log.h>
 
 #define DS_LOG_TAG "DeviceSpoofLab-Native"
@@ -30,5 +32,7 @@ void InstallDlopenHooks(dev_t dev, ino_t inode);
 // once per process with a valid JNIEnv before any Java method hook. Returns
 // true on success; safe to call multiple times (subsequent calls are no-ops).
 bool InitLSPlant(JNIEnv* env);
+
+void InstallJavaHooks(JNIEnv* env);
 
 }  // namespace ds

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <sys/types.h>
 #include <jni.h>
 
 #define ZYGISK_API_VERSION 4
