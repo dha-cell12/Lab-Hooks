@@ -62,16 +62,16 @@ android {
         }
     }
 
-    sourceSets {
-        getByName("main") {
-            java.srcDir("src/main/java")
-            // Xposed/LSPosed entry points are kept in-tree for reference
-            // but excluded from the standalone Zygisk build, which does
-            // not depend on the Xposed framework JARs.
-            java.exclude("com/devicespooflab/hooks/MainHook.java")
-            java.exclude("com/devicespooflab/hooks/XposedModuleImpl.java")
-        }
-    }
+    sourceSets.getByName("main").java.setSrcDirs(listOf("src/main/java"))
+}
+
+// Xposed/LSPosed entry points are kept in-tree for reference but excluded
+// from the standalone Zygisk build, which does not depend on the Xposed
+// framework JARs. Applied after the android { } block because the Kotlin
+// DSL receiver inside sourceSets { java { } } shadows SourceDirectorySet.exclude.
+android.sourceSets.getByName("main").java.apply {
+    exclude("com/devicespooflab/hooks/MainHook.java")
+    exclude("com/devicespooflab/hooks/XposedModuleImpl.java")
 }
 
 dependencies {
