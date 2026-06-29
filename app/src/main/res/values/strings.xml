@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">DeviceSpoofLabs-Hooks</string>
     <string name="app_title">Device Spoof Labs</string>
-    <string name="xposed_description">Standalone LSPosed module for runtime device, identifier, WebView, and native property spoofing.</string>
     <string name="select_all_label">Enable all</string>
     <string name="android_version_label">Android version</string>
     <string name="android_version_decrement">−</string>

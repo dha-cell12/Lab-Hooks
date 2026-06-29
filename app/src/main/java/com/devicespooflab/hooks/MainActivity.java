@@ -3,7 +3,6 @@ package com.devicespooflab.hooks;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -526,10 +525,9 @@ public class MainActivity extends AppCompatActivity {
         debounceHandler.postDelayed(persistRunnable, PERSIST_DEBOUNCE_MS);
     }
 
-    // Writes the live config to disk + a world-readable SharedPreferences (the
-    // bootstrap seed target apps read via XSharedPreferences), then pushes it to
-    // RemotePreferences over the writable IXposedService binder. Runs on
-    // persistExecutor, so the binder commit stays off the main thread.
+    // Persists the live config to device_profile.conf and scope.list. The root
+    // companion reads these files directly, so there is no SharedPreferences or
+    // RemotePreferences channel to maintain. Runs on persistExecutor.
     private void doPersist() {
         try {
             ConfigManager.saveConfig(configFile);
@@ -544,34 +542,6 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> Toast.makeText(this,
                     getString(R.string.save_failed, e.getMessage()),
                     Toast.LENGTH_LONG).show());
-        }
-        SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        for (Map.Entry<String, String> e : ConfigManager.getRawProperties().entrySet()) {
-            editor.putString(e.getKey(), e.getValue());
-        }
-        editor.apply();
-        makePrefsWorldReadable();
-        publishIfWritable();
-    }
-
-    // RemotePreferences was removed along with LSPosed; the native companion
-    // reads device_profile.conf directly, so this is now a no-op.
-    private void publishIfWritable() {
-    }
-
-    private void makePrefsWorldReadable() {
-        try {
-            File dataDir = new File(getApplicationInfo().dataDir);
-            File prefsDir = new File(dataDir, "shared_prefs");
-            File prefsFile = new File(prefsDir, "config.xml");
-            if (prefsFile.exists()) prefsFile.setReadable(true, false);
-            if (prefsDir.exists()) {
-                prefsDir.setExecutable(true, false);
-                prefsDir.setReadable(true, false);
-            }
-            dataDir.setExecutable(true, false);
-        } catch (Throwable ignored) {
         }
     }
 
